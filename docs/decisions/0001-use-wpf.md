@@ -40,4 +40,19 @@ If manager plus two notes remains above 100 MB after profiling and reasonable op
 
 ## Caveats
 
+### Reproducing the measurements
+
+All memory numbers use the `Working Set - Private` performance counter —
+the same metric Task Manager shows by default. Do not compare using
+`Process.WorkingSet64` or "total working set".
+
+To reproduce, let the Release build settle for 8–10 seconds, then:
+
+```powershell
+$counter = Get-Counter '\Process(StickyNotes.App*)\Working Set - Private'
+$privateMB = ($counter.CounterSamples |
+    Where-Object InstanceName -Like 'stickynotes.app*' |
+    Measure-Object CookedValue -Sum).Sum / 1MB
+```
+
 The spike did not include SQLite, inline image decoding, or production services. Startup `WaitForInputIdle` was 0.7–0.8 seconds for two notes, but that metric does not prove when every note finished rendering and is not being used as a launch-time verdict.
