@@ -1,0 +1,115 @@
+<Application x:Class="StickyNotes.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:StickyNotes.App"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <local:NoteColorConverter x:Key="NoteColorConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <system:Double x:Key="TitleFontSize">27</system:Double>
+        <system:Double x:Key="ListFontSize">18</system:Double>
+        <system:Double x:Key="EditorFontSize">18</system:Double>
+        <system:Double x:Key="MenuFontSize">17</system:Double>
+        <system:Double x:Key="ChromeIconSize">16</system:Double>
+        <system:Double x:Key="ToolbarIconSize">18</system:Double>
+        <system:Double x:Key="HeaderHeight">40</system:Double>
+        <system:Double x:Key="ToolbarHeight">49</system:Double>
+        <system:Double x:Key="ChromeButtonExtent">45</system:Double>
+        <system:Double x:Key="FormatButtonWidth">52</system:Double>
+        <system:Double x:Key="FormatButtonHeight">48</system:Double>
+        <system:Double x:Key="NoteMenuWidth">365</system:Double>
+        <system:Double x:Key="NoteMenuPaletteHeight">54</system:Double>
+        <system:Double x:Key="NoteMenuRowHeight">62</system:Double>
+        <system:Double x:Key="NoteCardHeight">174</system:Double>
+        <SolidColorBrush x:Key="AppBackground" Color="#202020"/>
+        <SolidColorBrush x:Key="NoteBackground" Color="#333333"/>
+        <SolidColorBrush x:Key="RaisedBackground" Color="#404040"/>
+        <SolidColorBrush x:Key="PrimaryText" Color="#EEEEEE"/>
+        <SolidColorBrush x:Key="SecondaryText" Color="#A0A0A0"/>
+
+        <Style x:Key="ChromeButton" TargetType="Button">
+            <Setter Property="Width" Value="{DynamicResource ChromeButtonExtent}"/>
+            <Setter Property="Height" Value="{DynamicResource HeaderHeight}"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="{DynamicResource ChromeIconSize}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Background" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#22000000"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#33000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FormatButton" TargetType="Button">
+            <Setter Property="Width" Value="{DynamicResource FormatButtonWidth}"/>
+            <Setter Property="Height" Value="{DynamicResource FormatButtonHeight}"/>
+            <Setter Property="FontSize" Value="{DynamicResource ToolbarIconSize}"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryText}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Background" Background="{TemplateBinding Background}" Margin="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#484848"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="NoteMenuButton" TargetType="Button">
+            <Setter Property="Height" Value="{DynamicResource NoteMenuRowHeight}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="20,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource MenuFontSize}"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryText}"/>
+            <Setter Property="Background" Value="#3B3B3B"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Background" Background="{TemplateBinding Background}">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#484848"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#505050"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Application.Resources>
+</Application>

@@ -1,0 +1,28 @@
+# Build output
+**/bin/
+**/obj/
+**/Debug/
+**/Release/
+
+# Tool output
+.artifacts/
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+*.tmp
+
+# IDE
+.idea/
+*.sln.DotSettings.user
+*.DotSettings.user
+
+# NuGet
+packages/
+
+# User data — developers should set WIN_STICKY_NOTES_DATA_DIR for testing
+*/settings.json
+*/notes.json
+
+docs/references/

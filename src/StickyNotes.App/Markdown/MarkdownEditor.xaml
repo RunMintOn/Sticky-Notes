@@ -1,0 +1,73 @@
+<UserControl x:Class="StickyNotes.App.Markdown.MarkdownEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+             UseLayoutRounding="True" SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="{DynamicResource TextFormattingMode}"
+             TextOptions.TextRenderingMode="{DynamicResource TextRenderingMode}"
+             TextOptions.TextHintingMode="{DynamicResource TextHintingMode}">
+    <UserControl.Resources>
+        <Style x:Key="ThinScrollThumb" TargetType="Thumb">
+            <Setter Property="Width" Value="4"/>
+            <Setter Property="MinHeight" Value="24"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThumbBody" Width="4" Margin="1,0" CornerRadius="2"
+                                Background="#686868"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbBody" Property="Background" Value="#888888"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbBody" Property="Background" Value="#A0A0A0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Width="6" Background="Transparent">
+                            <Track x:Name="PART_Track" Orientation="Vertical" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ThinScrollThumb}"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <avalonEdit:TextEditor x:Name="TextEditor"
+                           Background="{StaticResource NoteBackground}"
+                           Foreground="{StaticResource PrimaryText}"
+                           FontFamily="{DynamicResource EditorFontFamily}"
+                           FontSize="{DynamicResource EditorFontSize}"
+                           Padding="0"
+                           BorderThickness="0"
+                           UseLayoutRounding="True"
+                           SnapsToDevicePixels="True"
+                           TextOptions.TextFormattingMode="{DynamicResource TextFormattingMode}"
+                           TextOptions.TextRenderingMode="{DynamicResource TextRenderingMode}"
+                           TextOptions.TextHintingMode="{DynamicResource TextHintingMode}"
+                           ShowLineNumbers="False"
+                           WordWrap="True"
+                           HorizontalScrollBarVisibility="Disabled"
+                           VerticalScrollBarVisibility="Auto"/>
+</UserControl>

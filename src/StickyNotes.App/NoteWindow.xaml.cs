@@ -1,0 +1,230 @@
+using System.ComponentModel;
+using System.Text.RegularExpressions;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
+using StickyNotes.App.Models;
+using StickyNotes.App.Services;
+
+namespace StickyNotes.App;
+
+public partial class NoteWindow : Window
+{
+    private readonly NoteItem _note;
+    private readonly NoteStore _store;
+    private readonly UserSettings _settings;
+    private readonly AttachmentService _attachments = new();
+    private readonly DispatcherTimer _saveTimer;
+    private bool _isLoading = true;
+
+    public NoteWindow(NoteItem note, NoteStore store, UserSettings settings)
+    {
+        _note = note;
+        _store = store;
+        _settings = settings;
+        DataContext = note;
+        InitializeComponent();
+        NativeWindowStyle.EnableRoundedCorners(this);
+        Editor.AssetRoot = _attachments.AssetRoot;
+        Editor.RevealMarkersOnHover = settings.RevealMarkdownOnHover;
+
+        Width = Math.Max(note.Width, MinWidth);
+        Height = Math.Max(note.Height, MinHeight);
+        if (double.IsNaN(note.Left) || double.IsNaN(note.Top))
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        else
+        {
+            Left = note.Left;
+            Top = note.Top;
+        }
+
+        _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
+        _saveTimer.Tick += (_, _) => SaveEditor();
+        _settings.PropertyChanged += Settings_PropertyChanged;
+        LoadEditor();
+        _isLoading = false;
+    }
+
+    public bool WasDeleted { get; private set; }
+
+    private void LoadEditor()
+    {
+        Editor.Text = string.IsNullOrEmpty(_note.Markdown) ? _note.PlainText : _note.Markdown;
+    }
+
+    private void Editor_TextChanged(object sender, EventArgs e)
+    {
+        if (_isLoading) return;
+        _saveTimer.Stop();
+        _saveTimer.Start();
+    }
+
+    private void SaveEditor()
+    {
+        _saveTimer.Stop();
+        _note.Markdown = Editor.Text;
+        _note.PlainText = MarkdownToPlainText(Editor.Text);
+        _note.RtfBase64 = "";
+        _note.UpdatedAt = DateTimeOffset.Now;
+        var index = _store.Notes.IndexOf(_note);
+        if (index > 0) _store.Notes.Move(index, 0);
+        _store.ScheduleSave();
+    }
+
+    private void Window_Activated(object sender, EventArgs e)
+    {
+        AnimateChrome(expanded: true);
+        Editor.Focus();
+    }
+
+    private void Window_Deactivated(object sender, EventArgs e)
+    {
+        if (NoteMenuPopup.IsOpen) return;
+        AnimateChrome(expanded: false);
+    }
+
+    private void WindowBounds_Changed(object sender, EventArgs e)
+    {
+        if (_isLoading || WindowState != WindowState.Normal) return;
+        _note.Left = Left;
+        _note.Top = Top;
+        _note.Width = ActualWidth;
+        _note.Height = ActualHeight;
+        _store.ScheduleSave();
+    }
+
+    private void More_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateMenuOffset();
+        NoteMenuPopup.IsOpen = !NoteMenuPopup.IsOpen;
+    }
+
+    private void Color_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string color })
+        {
+            _note.Color = color;
+            _store.ScheduleSave();
+            NoteMenuPopup.IsOpen = false;
+        }
+    }
+
+    private void NewNote_Click(object sender, RoutedEventArgs e) =>
+        ((App)Application.Current).CreateNote();
+
+    private void NotesList_Click(object sender, RoutedEventArgs e)
+    {
+        Application.Current.MainWindow.Show();
+        Application.Current.MainWindow.Activate();
+    }
+
+    private void Delete_Click(object sender, RoutedEventArgs e)
+    {
+        WasDeleted = true;
+        _store.Delete(_note);
+        Close();
+    }
+
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Strike_Click(object sender, RoutedEventArgs e)
+    {
+        Editor.ToggleStrikethrough();
+        Editor.Focus();
+    }
+
+    private void Bold_Click(object sender, RoutedEventArgs e)
+    {
+        Editor.ToggleBold();
+        Editor.Focus();
+    }
+
+    private void Italic_Click(object sender, RoutedEventArgs e)
+    {
+        Editor.ToggleItalic();
+        Editor.Focus();
+    }
+
+    private void Bullets_Click(object sender, RoutedEventArgs e)
+    {
+        Editor.ToggleBullets();
+        Editor.Focus();
+    }
+
+    private void InlineCode_Click(object sender, RoutedEventArgs e)
+    {
+        Editor.ToggleInlineCode();
+        Editor.Focus();
+    }
+    private void Image_Click(object sender, RoutedEventArgs e)
+    {
+        InsertImage();
+        Editor.Focus();
+    }
+
+    private void Editor_PasteImageRequested(object? sender, EventArgs e) => InsertImage();
+
+    private void InsertImage()
+    {
+        var path = _attachments.ImportFromClipboardOrPicker(_note);
+        if (path is not null) Editor.InsertMarkdownImage(path);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _settings.PropertyChanged -= Settings_PropertyChanged;
+        if (!_isLoading && !WasDeleted) SaveEditor();
+        base.OnClosed(e);
+    }
+
+    private void Settings_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(UserSettings.RevealMarkdownOnHover))
+            Editor.RevealMarkersOnHover = _settings.RevealMarkdownOnHover;
+        if (e.PropertyName == nameof(UserSettings.OverallScale))
+        {
+            if (IsActive)
+            {
+                SetChrome(expanded: true);
+            }
+            else
+            {
+                SetChrome(expanded: false);
+            }
+            if (NoteMenuPopup.IsOpen) UpdateMenuOffset();
+        }
+    }
+
+    private void UpdateMenuOffset() =>
+        NoteMenuPopup.HorizontalOffset = Resource("ChromeButtonExtent") * 2 - Resource("NoteMenuWidth");
+
+    private void AnimateChrome(bool expanded)
+    {
+        var headerTarget = expanded ? Resource("HeaderHeight") : 8 * _settings.OverallScale;
+        var toolbarTarget = expanded ? Resource("ToolbarHeight") : 0;
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var duration = TimeSpan.FromMilliseconds(150);
+
+        Header.BeginAnimation(HeightProperty, new DoubleAnimation(Header.ActualHeight, headerTarget, duration) { EasingFunction = easing });
+        Toolbar.BeginAnimation(HeightProperty, new DoubleAnimation(Toolbar.ActualHeight, toolbarTarget, duration) { EasingFunction = easing });
+        Toolbar.BeginAnimation(OpacityProperty, new DoubleAnimation(Toolbar.Opacity, expanded ? 1 : 0, duration));
+    }
+
+    private void SetChrome(bool expanded)
+    {
+        Header.BeginAnimation(HeightProperty, null);
+        Toolbar.BeginAnimation(HeightProperty, null);
+        Toolbar.BeginAnimation(OpacityProperty, null);
+        Header.Height = expanded ? Resource("HeaderHeight") : 8 * _settings.OverallScale;
+        Toolbar.Height = expanded ? Resource("ToolbarHeight") : 0;
+        Toolbar.Opacity = expanded ? 1 : 0;
+    }
+
+    private static string MarkdownToPlainText(string markdown) => Regex.Replace(
+        markdown,
+        @"!?\[([^\]]*)\]\([^)]*\)|[*_~`#>-]",
+        "$1").Trim();
+
+    private static double Resource(string key) => (double)Application.Current.Resources[key];
+}
