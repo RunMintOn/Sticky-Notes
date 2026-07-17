@@ -12,7 +12,8 @@
         FontFamily="{DynamicResource InterfaceFontFamily}"
         TextOptions.TextFormattingMode="{DynamicResource TextFormattingMode}"
         TextOptions.TextRenderingMode="{DynamicResource TextRenderingMode}"
-        TextOptions.TextHintingMode="{DynamicResource TextHintingMode}">
+        TextOptions.TextHintingMode="{DynamicResource TextHintingMode}"
+        PreviewKeyDown="Window_PreviewKeyDown">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="{DynamicResource HeaderHeight}" ResizeBorderThickness="6" CornerRadius="0"
                             GlassFrameThickness="0" UseAeroCaptionButtons="False"/>
@@ -33,11 +34,11 @@
             </Grid.ColumnDefinitions>
             <Button Content="&#xE710;" Style="{StaticResource ChromeButton}" Foreground="#66000000"
                     HorizontalAlignment="Left" Click="NewNote_Click"
-                    shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="New note"/>
+                    shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="{DynamicResource NewNoteText}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button x:Name="MoreButton" Content="&#xE712;" Style="{StaticResource ChromeButton}"
                         Foreground="#66000000" Click="More_Click"
-                        shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Menu"/>
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="{DynamicResource MenuText}"/>
                 <Button Content="&#xE8BB;" Style="{StaticResource ChromeButton}" Foreground="#66000000"
                         Click="Close_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Close"/>
             </StackPanel>
@@ -52,12 +53,12 @@
                 <Button Content="B" Style="{StaticResource FormatButton}" FontWeight="Bold" Click="Bold_Click"/>
                 <Button Content="I" Style="{StaticResource FormatButton}" FontStyle="Italic" Click="Italic_Click"/>
                 <Button Content="&lt;/&gt;" Style="{StaticResource FormatButton}" Click="InlineCode_Click"
-                        ToolTip="Inline code"/>
+                        ToolTip="{DynamicResource InlineCodeText}"/>
                 <Button Style="{StaticResource FormatButton}" Click="Strike_Click">
                     <TextBlock Text="ab" TextDecorations="Strikethrough"/>
                 </Button>
                 <Button Content="☷" Style="{StaticResource FormatButton}" Click="Bullets_Click"/>
-                <Button Content="▧" Style="{StaticResource FormatButton}" Click="Image_Click" ToolTip="Insert image"/>
+                <Button Content="▧" Style="{StaticResource FormatButton}" Click="Image_Click" ToolTip="{DynamicResource InsertImageText}"/>
             </StackPanel>
         </Border>
 
@@ -67,25 +68,31 @@
             <Border Width="{DynamicResource NoteMenuWidth}" Background="#3B3B3B" Effect="{x:Null}">
                 <StackPanel>
                     <UniformGrid Rows="1" Columns="7" Height="{DynamicResource NoteMenuPaletteHeight}">
-                        <Button Background="#E6B904" BorderThickness="0" Tag="Yellow" Click="Color_Click"/>
-                        <Button Background="#65BA5A" BorderThickness="0" Tag="Green" Click="Color_Click"/>
-                        <Button Background="#EA86C2" BorderThickness="0" Tag="Pink" Click="Color_Click"/>
-                        <Button Background="#B07FE0" BorderThickness="0" Tag="Purple" Click="Color_Click"/>
-                        <Button Background="#59C0E7" BorderThickness="0" Tag="Blue" Click="Color_Click"/>
-                        <Button Background="#989898" BorderThickness="0" Tag="Gray" Click="Color_Click"/>
-                        <Button Background="#484848" BorderThickness="0" Tag="Charcoal" Click="Color_Click"/>
+                        <Button Background="#E6B904" Style="{StaticResource ColorChoiceButton}" Tag="Yellow" Click="Color_Click"/>
+                        <Button Background="#65BA5A" Style="{StaticResource ColorChoiceButton}" Tag="Green" Click="Color_Click"/>
+                        <Button Background="#EA86C2" Style="{StaticResource ColorChoiceButton}" Tag="Pink" Click="Color_Click"/>
+                        <Button Background="#B07FE0" Style="{StaticResource ColorChoiceButton}" Tag="Purple" Click="Color_Click"/>
+                        <Button Background="#59C0E7" Style="{StaticResource ColorChoiceButton}" Tag="Blue" Click="Color_Click"/>
+                        <Button Background="#989898" Style="{StaticResource ColorChoiceButton}" Tag="Gray" Click="Color_Click"/>
+                        <Button Background="#484848" Style="{StaticResource ColorChoiceButton}" Tag="Charcoal" Click="Color_Click"/>
                     </UniformGrid>
                     <Border Height="1" Background="#505050"/>
+                    <Button Style="{StaticResource NoteMenuButton}" Click="Help_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="?" FontWeight="Bold" FontSize="{DynamicResource ChromeIconSize}" Width="40"/>
+                            <TextBlock Text="{DynamicResource HelpText}"/>
+                        </StackPanel>
+                    </Button>
                     <Button Style="{StaticResource NoteMenuButton}" Click="NotesList_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource ChromeIconSize}" Width="40"/>
-                            <TextBlock Text="Notes list"/>
+                            <TextBlock Text="{DynamicResource NotesListText}"/>
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource NoteMenuButton}" Click="Delete_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource ChromeIconSize}" Width="40"/>
-                            <TextBlock Text="Delete note"/>
+                            <TextBlock Text="{DynamicResource DeleteNoteText}"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>

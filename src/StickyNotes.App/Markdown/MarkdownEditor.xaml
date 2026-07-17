@@ -52,10 +52,36 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="CodeCopyButton" TargetType="Button">
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#AFAFAF"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Background" Background="{TemplateBinding Background}" CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#20FFFFFF"/>
+                                <Setter Property="Foreground" Value="#F0F0F0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
-    <avalonEdit:TextEditor x:Name="TextEditor"
-                           Background="{StaticResource NoteBackground}"
+    <Grid Background="{StaticResource NoteBackground}">
+        <Canvas x:Name="CodeBlockBackground" Background="{x:Null}" IsHitTestVisible="False"/>
+        <avalonEdit:TextEditor x:Name="TextEditor"
+                           Background="Transparent"
                            Foreground="{StaticResource PrimaryText}"
                            FontFamily="{DynamicResource EditorFontFamily}"
                            FontSize="{DynamicResource EditorFontSize}"
@@ -69,5 +95,7 @@
                            ShowLineNumbers="False"
                            WordWrap="True"
                            HorizontalScrollBarVisibility="Disabled"
-                           VerticalScrollBarVisibility="Auto"/>
+                               VerticalScrollBarVisibility="Auto"/>
+        <Canvas x:Name="CodeBlockOverlay" Background="{x:Null}"/>
+    </Grid>
 </UserControl>

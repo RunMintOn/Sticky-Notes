@@ -5,6 +5,7 @@
 ```powershell
 dotnet build .\WinStickyNotes.sln -c Release
 dotnet run --project .\src\StickyNotes.App\StickyNotes.App.csproj -c Release
+dotnet test .\tests\StickyNotes.App.Tests\StickyNotes.App.Tests.csproj -c Release
 ```
 
 If a previous Release build is still running, `dotnet build` will retry 10 times

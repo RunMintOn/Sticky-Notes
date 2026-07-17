@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
@@ -28,6 +27,8 @@ public partial class NoteWindow : Window
         NativeWindowStyle.EnableRoundedCorners(this);
         Editor.AssetRoot = _attachments.AssetRoot;
         Editor.RevealMarkersOnHover = settings.RevealMarkdownOnHover;
+        Editor.AutoContinueLists = settings.AutoContinueLists;
+        Editor.CodeBlockAppearance = settings.CodeBlockAppearance;
 
         Width = Math.Max(note.Width, MinWidth);
         Height = Math.Max(note.Height, MinHeight);
@@ -63,13 +64,7 @@ public partial class NoteWindow : Window
     private void SaveEditor()
     {
         _saveTimer.Stop();
-        _note.Markdown = Editor.Text;
-        _note.PlainText = MarkdownToPlainText(Editor.Text);
-        _note.RtfBase64 = "";
-        _note.UpdatedAt = DateTimeOffset.Now;
-        var index = _store.Notes.IndexOf(_note);
-        if (index > 0) _store.Notes.Move(index, 0);
-        _store.ScheduleSave();
+        _store.UpdateContent(_note, Editor.Text, DateTimeOffset.Now);
     }
 
     private void Window_Activated(object sender, EventArgs e)
@@ -117,6 +112,24 @@ public partial class NoteWindow : Window
     {
         Application.Current.MainWindow.Show();
         Application.Current.MainWindow.Activate();
+    }
+
+    private void Help_Click(object sender, RoutedEventArgs e) =>
+        ((App)Application.Current).ShowHelpPage();
+
+    private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.F1)
+        {
+            ((App)Application.Current).ShowHelpPage();
+            e.Handled = true;
+        }
+        else if (e.Key == System.Windows.Input.Key.N &&
+                 System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control)
+        {
+            ((App)Application.Current).CreateNote();
+            e.Handled = true;
+        }
     }
 
     private void Delete_Click(object sender, RoutedEventArgs e)
@@ -182,6 +195,10 @@ public partial class NoteWindow : Window
     {
         if (e.PropertyName == nameof(UserSettings.RevealMarkdownOnHover))
             Editor.RevealMarkersOnHover = _settings.RevealMarkdownOnHover;
+        if (e.PropertyName == nameof(UserSettings.AutoContinueLists))
+            Editor.AutoContinueLists = _settings.AutoContinueLists;
+        if (e.PropertyName == nameof(UserSettings.CodeBlockAppearance))
+            Editor.CodeBlockAppearance = _settings.CodeBlockAppearance;
         if (e.PropertyName == nameof(UserSettings.OverallScale))
         {
             if (IsActive)
@@ -220,11 +237,6 @@ public partial class NoteWindow : Window
         Toolbar.Height = expanded ? Resource("ToolbarHeight") : 0;
         Toolbar.Opacity = expanded ? 1 : 0;
     }
-
-    private static string MarkdownToPlainText(string markdown) => Regex.Replace(
-        markdown,
-        @"!?\[([^\]]*)\]\([^)]*\)|[*_~`#>-]",
-        "$1").Trim();
 
     private static double Resource(string key) => (double)Application.Current.Resources[key];
 }

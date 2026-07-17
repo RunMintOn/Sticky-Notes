@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using StickyNotes.App.Models;
 
 namespace StickyNotes.App.Services;
@@ -11,9 +12,10 @@ public sealed class NoteStore
     private readonly string _filePath;
     private CancellationTokenSource? _scheduledSave;
 
-    public NoteStore()
+    public NoteStore(string? dataDirectory = null)
     {
-        var directory = AppDataDirectory.Resolve();
+        var directory = dataDirectory ?? AppDataDirectory.Resolve();
+        Directory.CreateDirectory(directory);
         _filePath = Path.Combine(directory, "notes.json");
     }
 
@@ -49,6 +51,26 @@ public sealed class NoteStore
     {
         Notes.Remove(note);
         ScheduleSave();
+    }
+
+    public bool UpdateContent(NoteItem note, string markdown, DateTimeOffset updatedAt)
+    {
+        var normalized = markdown.TrimEnd('\r', '\n');
+        var current = string.IsNullOrEmpty(note.Markdown) ? note.PlainText : note.Markdown;
+        if (string.Equals(current.TrimEnd('\r', '\n'), normalized, StringComparison.Ordinal))
+            return false;
+
+        note.Markdown = normalized;
+        note.PlainText = Regex.Replace(
+            normalized,
+            @"!?\[([^\]]*)\]\([^)]*\)|[*_~`#>-]",
+            "$1").Trim();
+        note.RtfBase64 = "";
+        note.UpdatedAt = updatedAt;
+        var index = Notes.IndexOf(note);
+        if (index > 0) Notes.Move(index, 0);
+        ScheduleSave();
+        return true;
     }
 
     public void ScheduleSave()

@@ -16,7 +16,9 @@ internal enum MarkdownStyleKind
     Link,
     InlineCode,
     Blockquote,
-    Highlight
+    Highlight,
+    CodeBlock,
+    CodeFence
 }
 
 internal readonly record struct MarkdownStyleSpan(int Start, int Length, MarkdownStyleKind Kind)
@@ -31,8 +33,14 @@ internal readonly record struct MarkdownMarkerSpan(int Start, int Length)
 
 internal readonly record struct MarkdownImageSpan(int Start, int Length, string Url, string AltText);
 internal readonly record struct MarkdownListSpan(int Start, int Length, string DisplayText);
+public readonly record struct MarkdownRuleSpan(int Start, int Length);
+public readonly record struct MarkdownCodeBlockSpan(
+    int Start,
+    int Length,
+    int BlockStart,
+    int BlockLength);
 
-internal sealed class MarkdownPresentation
+public sealed class MarkdownPresentation
 {
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UsePreciseSourceLocation()
@@ -43,8 +51,10 @@ internal sealed class MarkdownPresentation
     internal IReadOnlyList<MarkdownMarkerSpan> Markers { get; private init; } = [];
     internal IReadOnlyList<MarkdownImageSpan> Images { get; private init; } = [];
     internal IReadOnlyList<MarkdownListSpan> Lists { get; private init; } = [];
+    public IReadOnlyList<MarkdownRuleSpan> Rules { get; private init; } = [];
+    public IReadOnlyList<MarkdownCodeBlockSpan> CodeBlocks { get; private init; } = [];
 
-    internal static MarkdownPresentation Parse(string text)
+    public static MarkdownPresentation Parse(string text)
     {
         if (string.IsNullOrEmpty(text)) return new MarkdownPresentation();
 
@@ -53,6 +63,33 @@ internal sealed class MarkdownPresentation
         var images = new List<MarkdownImageSpan>();
         var lists = ParseLinePrefixes(text, styles);
         var document = Markdig.Markdown.Parse(text, Pipeline);
+        var rules = Regex.Matches(text, @"(?m)^[ \t]{0,3}(?:-[ \t]*){3,}(?=\r?$)")
+            .Select(match => new MarkdownRuleSpan(match.Index, match.Length))
+            .ToArray();
+        var codeBlocks = new List<MarkdownCodeBlockSpan>();
+        foreach (Match match in Regex.Matches(
+                     text,
+                     @"(?m)^(?<open>[ ]{0,3}`{3,}[^\r\n]*\r?\n)(?<content>[\s\S]*?)(?<close>^[ ]{0,3}`{3,}[ \t]*(?=\r?$))"))
+        {
+            var content = match.Groups["content"];
+            var contentLength = content.Length;
+            while (contentLength > 0 && (text[content.Index + contentLength - 1] is '\r' or '\n')) contentLength--;
+            if (contentLength > 0)
+            {
+                codeBlocks.Add(new MarkdownCodeBlockSpan(
+                    content.Index,
+                    contentLength,
+                    match.Index,
+                    match.Length));
+                styles.Add(new MarkdownStyleSpan(content.Index, contentLength, MarkdownStyleKind.CodeBlock));
+            }
+            var opening = match.Groups["open"];
+            var openingLength = opening.Length;
+            while (openingLength > 0 && (text[opening.Index + openingLength - 1] is '\r' or '\n')) openingLength--;
+            styles.Add(new MarkdownStyleSpan(opening.Index, openingLength, MarkdownStyleKind.CodeFence));
+            var closing = match.Groups["close"];
+            styles.Add(new MarkdownStyleSpan(closing.Index, closing.Length, MarkdownStyleKind.CodeFence));
+        }
 
         foreach (var heading in document.Descendants<HeadingBlock>())
         {
@@ -144,7 +181,9 @@ internal sealed class MarkdownPresentation
             Styles = styles.OrderBy(span => span.Start).ToArray(),
             Markers = MergeMarkers(markers, text.Length),
             Images = images.OrderBy(image => image.Start).ToArray(),
-            Lists = lists
+            Lists = lists,
+            Rules = rules,
+            CodeBlocks = codeBlocks
         };
     }
 

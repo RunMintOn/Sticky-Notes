@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
 
@@ -12,10 +13,15 @@ public partial class MarkdownEditor : UserControl
     private readonly MarkdownColorizer _colorizer;
     private readonly MarkdownImageGenerator _imageGenerator;
     private readonly MarkdownListGenerator _listGenerator;
+    private readonly MarkdownRuleGenerator _ruleGenerator;
+    private readonly MarkdownCodeBlockLayer _codeBlockLayer;
     private MarkdownPresentation _presentation = new();
     private int _activeLine;
     private int _hoverLine;
     private bool _revealMarkersOnHover;
+    private bool _overlayUpdatePending;
+    private CodeBlockAppearance _codeBlockAppearance = new(
+        -4, -4, 3, 3, 5, 39, 24, 5, 7);
 
     public MarkdownEditor()
     {
@@ -31,7 +37,13 @@ public partial class MarkdownEditor : UserControl
         _colorizer = new MarkdownColorizer();
         _imageGenerator = new MarkdownImageGenerator(TextEditor.Document, line => line == _activeLine);
         _listGenerator = new MarkdownListGenerator(TextEditor.Document, IsLineRevealed);
+        _ruleGenerator = new MarkdownRuleGenerator(TextEditor.Document, TextEditor.TextArea.TextView, IsLineRevealed);
+        _codeBlockLayer = new MarkdownCodeBlockLayer(
+            CodeBlockBackground,
+            CodeBlockOverlay,
+            (Style)FindResource("CodeCopyButton"));
         TextEditor.TextArea.TextView.ElementGenerators.Add(_markerGenerator);
+        TextEditor.TextArea.TextView.ElementGenerators.Add(_ruleGenerator);
         TextEditor.TextArea.TextView.ElementGenerators.Add(_listGenerator);
         TextEditor.TextArea.TextView.ElementGenerators.Add(_imageGenerator);
         TextEditor.TextArea.TextView.LineTransformers.Add(_colorizer);
@@ -49,6 +61,8 @@ public partial class MarkdownEditor : UserControl
             TextEditor.TextArea.TextView.Redraw();
         };
         TextEditor.TextArea.TextView.MouseMove += TextView_MouseMove;
+        TextEditor.TextArea.TextView.VisualLinesChanged += (_, _) => ScheduleCodeBlockOverlay();
+        TextEditor.TextArea.TextView.ScrollOffsetChanged += (_, _) => ScheduleCodeBlockOverlay();
         TextEditor.TextArea.TextView.MouseLeave += (_, _) =>
         {
             if (_hoverLine == 0) return;
@@ -66,6 +80,7 @@ public partial class MarkdownEditor : UserControl
             TextEditor.TextArea.TextView.Redraw();
         };
         TextEditor.PreviewKeyDown += TextEditor_PreviewKeyDown;
+        TextEditor.PreviewTextInput += TextEditor_PreviewTextInput;
     }
 
     public event EventHandler? TextChanged;
@@ -88,6 +103,20 @@ public partial class MarkdownEditor : UserControl
         }
     }
 
+    public bool AutoContinueLists { get; set; } = true;
+
+    public CodeBlockAppearance CodeBlockAppearance
+    {
+        get => _codeBlockAppearance;
+        set
+        {
+            _codeBlockAppearance = value;
+            _codeBlockLayer.Update(_presentation.CodeBlocks, value);
+            TextEditor.TextArea.TextView.Redraw();
+            ScheduleCodeBlockOverlay();
+        }
+    }
+
     public string Text
     {
         get => TextEditor.Text;
@@ -101,9 +130,10 @@ public partial class MarkdownEditor : UserControl
 
     public new bool Focus() => TextEditor.Focus();
 
-    public void ToggleBold() => ToggleInline("**", MarkdownStyleKind.Bold);
+    public void ToggleBold() => ToggleCurrentLineOrSelection("**");
     public void ToggleItalic() => ToggleInline("*", MarkdownStyleKind.Italic);
-    public void ToggleStrikethrough() => ToggleInline("~~", MarkdownStyleKind.Strikethrough);
+    public void ToggleStrikethrough() => ToggleCurrentLineOrSelection("~~");
+    public void ToggleHighlight() => ToggleCurrentLineOrSelection("==");
     public void ToggleInlineCode() => ToggleInline("`", MarkdownStyleKind.InlineCode);
 
     public void InsertMarkdownImage(string relativePath)
@@ -176,6 +206,18 @@ public partial class MarkdownEditor : UserControl
         else TextEditor.Select(offset + marker.Length, length);
     }
 
+    private void ToggleCurrentLineOrSelection(string marker)
+    {
+        var result = MarkdownEditing.ToggleInline(
+            TextEditor.Text,
+            TextEditor.SelectionStart,
+            TextEditor.SelectionLength,
+            marker);
+        if (result.Text == TextEditor.Text) return;
+        TextEditor.Document.Replace(0, TextEditor.Document.TextLength, result.Text);
+        TextEditor.Select(result.SelectionStart, result.SelectionLength);
+    }
+
     private void TextView_MouseMove(object sender, MouseEventArgs e)
     {
         if (!RevealMarkersOnHover) return;
@@ -190,6 +232,17 @@ public partial class MarkdownEditor : UserControl
 
     private void TextEditor_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None && AutoContinueLists)
+        {
+            var result = MarkdownEditing.ContinueList(TextEditor.Text, TextEditor.CaretOffset);
+            if (result is not null)
+            {
+                TextEditor.Document.Replace(0, TextEditor.Document.TextLength, result.Value.Text);
+                TextEditor.CaretOffset = result.Value.SelectionStart;
+                e.Handled = true;
+                return;
+            }
+        }
         if (Keyboard.Modifiers != ModifierKeys.Control) return;
         if (e.Key == Key.V && Clipboard.ContainsImage())
         {
@@ -207,6 +260,28 @@ public partial class MarkdownEditor : UserControl
             ToggleItalic();
             e.Handled = true;
         }
+        else if (e.Key == Key.H)
+        {
+            ToggleHighlight();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.D)
+        {
+            ToggleStrikethrough();
+            e.Handled = true;
+        }
+    }
+
+    private void TextEditor_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        if (e.Text != "`" || TextEditor.SelectionLength == 0) return;
+        var result = MarkdownEditing.TypeBacktick(
+            TextEditor.Text,
+            TextEditor.SelectionStart,
+            TextEditor.SelectionLength);
+        TextEditor.Document.Replace(0, TextEditor.Document.TextLength, result.Text);
+        TextEditor.Select(result.SelectionStart, result.SelectionLength);
+        e.Handled = true;
     }
 
     private bool IsLineRevealed(int line) => line == _activeLine || line == _hoverLine;
@@ -218,6 +293,20 @@ public partial class MarkdownEditor : UserControl
         _colorizer.Update(_presentation.Styles, _presentation.Markers);
         _imageGenerator.Update(_presentation.Images);
         _listGenerator.Update(_presentation.Lists);
+        _ruleGenerator.Update(_presentation.Rules);
+        _codeBlockLayer.Update(_presentation.CodeBlocks, CodeBlockAppearance);
         TextEditor.TextArea.TextView.Redraw();
+        ScheduleCodeBlockOverlay();
+    }
+
+    private void ScheduleCodeBlockOverlay()
+    {
+        if (_overlayUpdatePending) return;
+        _overlayUpdatePending = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
+        {
+            _overlayUpdatePending = false;
+            _codeBlockLayer.Refresh(TextEditor.TextArea.TextView, TextEditor.Document);
+        });
     }
 }

@@ -39,6 +39,17 @@ public partial class App : Application
         return note;
     }
 
+    internal void BringOpenNotesToFront()
+    {
+        foreach (var window in _noteWindows.Values)
+        {
+            window.Show();
+            NativeWindowStyle.BringToFront(window);
+        }
+    }
+
+    internal void ShowHelpPage() => ((MainWindow)MainWindow).ShowHelpPage();
+
     private void OpenNote(NoteItem note)
     {
         if (_noteWindows.TryGetValue(note.Id, out var existing))

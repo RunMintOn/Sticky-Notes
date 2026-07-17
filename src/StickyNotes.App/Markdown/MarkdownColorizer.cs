@@ -66,6 +66,16 @@ internal sealed class MarkdownColorizer : DocumentColorizingTransformer
                             FontStretches.Normal));
                         element.TextRunProperties.SetBackgroundBrush(CodeBackground);
                         break;
+                    case MarkdownStyleKind.CodeBlock:
+                    case MarkdownStyleKind.CodeFence:
+                        element.TextRunProperties.SetTypeface(new Typeface(
+                            new FontFamily("Cascadia Mono, Consolas"),
+                            FontStyles.Normal,
+                            FontWeights.Normal,
+                            FontStretches.Normal));
+                        if (style.Kind == MarkdownStyleKind.CodeFence)
+                            element.TextRunProperties.SetBaselineAlignment(BaselineAlignment.TextTop);
+                        break;
                     case MarkdownStyleKind.Blockquote:
                         element.TextRunProperties.SetForegroundBrush(QuoteBrush);
                         element.TextRunProperties.SetTypeface(new Typeface(
