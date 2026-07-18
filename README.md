@@ -18,6 +18,7 @@ The first runnable WPF shell includes:
 - selection-aware backtick typing that promotes one/two inline delimiters into a fenced block on the third backtick;
 - a bilingual in-place Help Page available from `?`, the Note Menu, or `F1`;
 - a command that brings all open Note Windows in front of other ordinary windows;
+- per-note persistent pinning and open/close/delete Note Card context menus;
 - content-sized Note Cards with an Open Fold for currently open notes;
 - debounced local persistence of Markdown content and window bounds;
 - active and inactive note chrome states.

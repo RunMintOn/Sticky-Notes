@@ -11,6 +11,7 @@ public sealed class NoteItem : INotifyPropertyChanged
     private string _color = "Yellow";
     private DateTimeOffset _updatedAt = DateTimeOffset.Now;
     private bool _isOpen;
+    private bool _isPinned;
 
     public Guid Id { get; init; } = Guid.NewGuid();
 
@@ -58,6 +59,12 @@ public sealed class NoteItem : INotifyPropertyChanged
     {
         get => _isOpen;
         set => Set(ref _isOpen, value);
+    }
+
+    public bool IsPinned
+    {
+        get => _isPinned;
+        set => Set(ref _isPinned, value);
     }
 
     public double Left { get; set; } = double.NaN;

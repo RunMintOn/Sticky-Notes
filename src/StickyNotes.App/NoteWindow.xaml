@@ -36,6 +36,26 @@
                     HorizontalAlignment="Left" Click="NewNote_Click"
                     shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="{DynamicResource NewNoteText}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Foreground="#66000000" Click="Pin_Click"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="{DynamicResource PinNoteText}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource ChromeButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                                    <Setter Property="Background" Value="#30000000"/>
+                                    <Setter Property="Foreground" Value="#AA000000"/>
+                                    <Setter Property="ToolTip" Value="{DynamicResource UnpinNoteText}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <TextBlock Text="&#xE718;" FontFamily="Segoe MDL2 Assets"
+                               RenderTransformOrigin="0.5,0.5">
+                        <TextBlock.RenderTransform>
+                            <RotateTransform Angle="-45"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+                </Button>
                 <Button x:Name="MoreButton" Content="&#xE712;" Style="{StaticResource ChromeButton}"
                         Foreground="#66000000" Click="More_Click"
                         shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="{DynamicResource MenuText}"/>

@@ -114,3 +114,7 @@ ignores papercuts from other projects.
 | `WindowDpi == 96` on a 125% display | Window created on 96-DPI monitor then moved | `PerMonitorV2` auto-updates; `PerMonitor` does not |
 | App exits silently on startup | `WinExe` + XAML load exception | Run via `dotnet .\StickyNotes.App.dll` |
 | UI test captures wrong content | `CopyFromScreen` is not window-specific | Use `PrintWindow` + `UIAutomationClient` |
+
+## Deferred engineering notes
+
+- [AvalonEdit line spacing](docs/notes/avalonedit-line-spacing.md)

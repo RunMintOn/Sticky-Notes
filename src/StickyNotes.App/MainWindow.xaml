@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:local="clr-namespace:StickyNotes.App"
-        Title="Sticky Notes" Width="681" Height="800" MinWidth="390" MinHeight="480"
+        Title="Sticky Notes" Width="540" Height="800" MinWidth="390" MinHeight="480"
         Background="{StaticResource AppBackground}" Foreground="{StaticResource PrimaryText}"
         WindowStyle="None" ResizeMode="CanResize" UseLayoutRounding="True" SnapsToDevicePixels="True"
         FontFamily="{DynamicResource InterfaceFontFamily}"
@@ -79,8 +79,11 @@
             <ListBox x:Name="NotesList" Grid.Row="2" ItemsSource="{Binding NotesView}"
                      Background="Transparent" BorderThickness="0" Foreground="{StaticResource PrimaryText}"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.CanContentScroll="True"
                      VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
-                     MouseDoubleClick="NotesList_MouseDoubleClick">
+                     VirtualizingPanel.ScrollUnit="Pixel"
+                     MouseDoubleClick="NotesList_MouseDoubleClick"
+                     PreviewMouseWheel="NotesList_PreviewMouseWheel">
                 <ListBox.Resources>
                     <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinVerticalScrollBar}"/>
                 </ListBox.Resources>
@@ -99,7 +102,7 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Selection" Property="Opacity" Value="0.9"/>
+                                            <Setter TargetName="Selection" Property="Background" Value="Transparent"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
                                             <Setter TargetName="Selection" Property="Background" Value="#18FFFFFF"/>
@@ -113,8 +116,46 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border MinHeight="{DynamicResource NoteCardMinHeight}"
-                                MaxHeight="{DynamicResource NoteCardHeight}"
-                                Background="{StaticResource NoteBackground}" CornerRadius="2">
+                                MaxHeight="{DynamicResource NoteCardHeight}" CornerRadius="2">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{StaticResource NoteBackground}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                            <Setter Property="Background" Value="#3B3B3B"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Border.ContextMenu>
+                                <ContextMenu Style="{StaticResource NoteCardContextMenu}">
+                                    <MenuItem Header="{DynamicResource OpenNoteText}" Click="OpenNoteMenu_Click">
+                                        <MenuItem.Style>
+                                            <Style TargetType="MenuItem" BasedOn="{StaticResource NoteCardMenuItem}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOpen}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </MenuItem.Style>
+                                    </MenuItem>
+                                    <MenuItem Header="{DynamicResource CloseNoteText}" Click="CloseNoteMenu_Click">
+                                        <MenuItem.Style>
+                                            <Style TargetType="MenuItem" BasedOn="{StaticResource NoteCardMenuItem}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOpen}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </MenuItem.Style>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem Header="{DynamicResource DeleteNoteText}" Style="{StaticResource NoteCardMenuItem}"
+                                              Click="DeleteNoteMenu_Click"/>
+                                </ContextMenu>
+                            </Border.ContextMenu>
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="4"/>
@@ -129,10 +170,14 @@
                                     <TextBlock Text="{Binding UpdatedLabel}" Foreground="{StaticResource SecondaryText}"
                                                FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                                 </Grid>
-                                <Path Grid.RowSpan="2" Data="M0,16 L16,0 L16,16 Z" Fill="#696969"
-                                      Width="16" Height="16" Stretch="Fill"
+                                <Grid Grid.RowSpan="2" Width="18" Height="18"
                                       HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                      Visibility="{Binding IsOpen, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                      Visibility="{Binding IsOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <!-- The original corner is cut away; the flap folds back toward the upper-left. -->
+                                    <Path Data="M0,18 L18,0 L18,18 Z" Fill="{StaticResource AppBackground}" Stretch="Fill"/>
+                                    <Path Data="M0,18 L0,0 L18,0 Z" Fill="#5B5B5B" Stretch="Fill"/>
+                                    <Path Data="M0,18 L18,0" Stroke="#777777" StrokeThickness="1" Stretch="Fill"/>
+                                </Grid>
                             </Grid>
                         </Border>
                     </DataTemplate>

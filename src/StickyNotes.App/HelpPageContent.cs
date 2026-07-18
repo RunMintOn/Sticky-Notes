@@ -13,6 +13,8 @@ public sealed record HelpPageContent(string Title, string Introduction, IReadOnl
             new("Notes", [
                 new("New note", "Create and open a new note.", "Ctrl+N"),
                 new("Find open notes", "Bring every open Note Window in front of ordinary windows."),
+                new("Pin a note", "Use the pin in a Note Window to keep that note above other windows."),
+                new("Note Card menu", "Right-click a Note Card to open, close, or delete it."),
                 new("Search", "Filter Note Cards by their text."),
                 new("Help", "Open this page from anywhere.", "F1")
             ]),
@@ -44,6 +46,8 @@ public sealed record HelpPageContent(string Title, string Introduction, IReadOnl
             new("便签", [
                 new("新建便签", "创建并打开一个新便签。", "Ctrl+N"),
                 new("找回打开的便签", "将所有打开的便签窗口移动到普通窗口前面。"),
+                new("置顶便签", "使用便签窗口中的图钉，让该便签持续位于其他窗口上方。"),
+                new("便签卡片菜单", "右键便签卡片可以打开、关闭或删除便签。"),
                 new("搜索", "根据正文筛选便签卡片。"),
                 new("帮助", "从任意窗口打开本页面。", "F1")
             ]),

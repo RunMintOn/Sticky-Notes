@@ -18,7 +18,7 @@ public partial class App : Application
         _store = new NoteStore();
         await _store.LoadAsync();
 
-        var mainWindow = new MainWindow(_store, _settings, OpenNote, CreateNote);
+        var mainWindow = new MainWindow(_store, _settings, OpenNote, CloseNote, DeleteNote, CreateNote);
         MainWindow = mainWindow;
         mainWindow.Show();
 
@@ -73,6 +73,20 @@ public partial class App : Application
         window.Show();
         window.Activate();
         _store.ScheduleSave();
+    }
+
+    private void CloseNote(NoteItem note)
+    {
+        if (_noteWindows.TryGetValue(note.Id, out var window))
+            window.Close();
+    }
+
+    private void DeleteNote(NoteItem note)
+    {
+        if (_noteWindows.TryGetValue(note.Id, out var window))
+            window.DeleteNote();
+        else
+            _store.Delete(note);
     }
 
     protected override void OnExit(ExitEventArgs e)

@@ -13,16 +13,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private readonly NoteStore _store;
     private readonly Action<NoteItem> _openNote;
+    private readonly Action<NoteItem> _closeNote;
+    private readonly Action<NoteItem> _deleteNote;
     private readonly Func<NoteItem> _createNote;
 
     public MainWindow(
         NoteStore store,
         UserSettings settings,
         Action<NoteItem> openNote,
+        Action<NoteItem> closeNote,
+        Action<NoteItem> deleteNote,
         Func<NoteItem> createNote)
     {
         _store = store;
         _openNote = openNote;
+        _closeNote = closeNote;
+        _deleteNote = deleteNote;
         _createNote = createNote;
         Settings = settings;
         Help = HelpPageContent.Create(settings.Language);
@@ -111,6 +117,44 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void NotesList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (NotesList.SelectedItem is NoteItem note) _openNote(note);
+    }
+
+    private void NotesList_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        var scrollViewer = FindVisualChild<System.Windows.Controls.ScrollViewer>(NotesList);
+        if (scrollViewer is null) return;
+
+        const double pixelsPerWheelNotch = 42;
+        var distance = e.Delta / 120d * pixelsPerWheelNotch;
+        scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - distance);
+        e.Handled = true;
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T result) return result;
+            var descendant = FindVisualChild<T>(child);
+            if (descendant is not null) return descendant;
+        }
+        return null;
+    }
+
+    private void OpenNoteMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is NoteItem note) _openNote(note);
+    }
+
+    private void CloseNoteMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is NoteItem note) _closeNote(note);
+    }
+
+    private void DeleteNoteMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is NoteItem note) _deleteNote(note);
     }
 
     private void SearchBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)

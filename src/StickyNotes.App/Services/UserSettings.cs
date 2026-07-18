@@ -295,6 +295,10 @@ public sealed class UserSettings : INotifyPropertyChanged
         SetResource("InsertImageText", zh ? "插入图片" : "Insert image");
         SetResource("NotesListText", zh ? "便签列表" : "Notes list");
         SetResource("DeleteNoteText", zh ? "删除便签" : "Delete note");
+        SetResource("OpenNoteText", zh ? "打开便签" : "Open note");
+        SetResource("CloseNoteText", zh ? "关闭便签" : "Close note");
+        SetResource("PinNoteText", zh ? "置顶便签" : "Pin note");
+        SetResource("UnpinNoteText", zh ? "取消置顶" : "Unpin note");
         SetResource("HelpText", zh ? "帮助与快捷键" : "Help & shortcuts");
         SetResource("CopyCodeText", zh ? "复制代码" : "Copy code");
         SetResource("CodeBlockTuningText", zh ? "代码块调试（实验性）" : "Code block tuning (experimental)");

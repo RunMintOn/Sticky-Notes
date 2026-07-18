@@ -29,6 +29,7 @@ public partial class NoteWindow : Window
         Editor.RevealMarkersOnHover = settings.RevealMarkdownOnHover;
         Editor.AutoContinueLists = settings.AutoContinueLists;
         Editor.CodeBlockAppearance = settings.CodeBlockAppearance;
+        Topmost = note.IsPinned;
 
         Width = Math.Max(note.Width, MinWidth);
         Height = Math.Max(note.Height, MinHeight);
@@ -116,6 +117,13 @@ public partial class NoteWindow : Window
         NoteMenuPopup.IsOpen = !NoteMenuPopup.IsOpen;
     }
 
+    private void Pin_Click(object sender, RoutedEventArgs e)
+    {
+        _note.IsPinned = !_note.IsPinned;
+        Topmost = _note.IsPinned;
+        _store.ScheduleSave();
+    }
+
     private void Color_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: string color })
@@ -154,6 +162,9 @@ public partial class NoteWindow : Window
     }
 
     private void Delete_Click(object sender, RoutedEventArgs e)
+        => DeleteNote();
+
+    public void DeleteNote()
     {
         WasDeleted = true;
         _store.Delete(_note);
