@@ -36,8 +36,11 @@ public partial class NoteWindow : Window
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
         else
         {
-            Left = note.Left;
-            Top = note.Top;
+            var placement = WindowPlacement.EnsureAccessible(
+                new Rect(note.Left, note.Top, Width, Height),
+                WindowPlacement.CurrentDesktop);
+            Left = note.Left = placement.Left;
+            Top = note.Top = placement.Top;
         }
 
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
@@ -48,6 +51,22 @@ public partial class NoteWindow : Window
     }
 
     public bool WasDeleted { get; private set; }
+
+    public void Reveal()
+    {
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+
+        var width = ActualWidth > 0 ? ActualWidth : Width;
+        var height = ActualHeight > 0 ? ActualHeight : Height;
+        var placement = WindowPlacement.EnsureAccessible(
+            new Rect(Left, Top, width, height),
+            WindowPlacement.CurrentDesktop);
+        Left = placement.Left;
+        Top = placement.Top;
+        Show();
+        Activate();
+    }
 
     private void LoadEditor()
     {
@@ -82,6 +101,8 @@ public partial class NoteWindow : Window
     private void WindowBounds_Changed(object sender, EventArgs e)
     {
         if (_isLoading || WindowState != WindowState.Normal) return;
+        var bounds = new Rect(Left, Top, ActualWidth, ActualHeight);
+        if (!WindowPlacement.IsAccessible(bounds, WindowPlacement.CurrentDesktop)) return;
         _note.Left = Left;
         _note.Top = Top;
         _note.Width = ActualWidth;

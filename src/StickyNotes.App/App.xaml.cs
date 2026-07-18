@@ -54,8 +54,7 @@ public partial class App : Application
     {
         if (_noteWindows.TryGetValue(note.Id, out var existing))
         {
-            existing.Show();
-            existing.Activate();
+            existing.Reveal();
             return;
         }
 
