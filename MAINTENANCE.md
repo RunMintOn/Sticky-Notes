@@ -114,6 +114,8 @@ ignores papercuts from other projects.
 | `WindowDpi == 96` on a 125% display | Window created on 96-DPI monitor then moved | `PerMonitorV2` auto-updates; `PerMonitor` does not |
 | App exits silently on startup | `WinExe` + XAML load exception | Run via `dotnet .\StickyNotes.App.dll` |
 | UI test captures wrong content | `CopyFromScreen` is not window-specific | Use `PrintWindow` + `UIAutomationClient` |
+| Test project: xUnit template fails to reference the WPF app | `dotnet new xunit` targets `net8.0` but WPF projects need `net8.0-windows` | Set `<TargetFramework>net8.0-windows</TargetFramework>` in the test `.csproj` |
+| Note Window created but invisible, cannot be closed | Window was restored with minimized sentinel coordinates (`Left = -21845`) preserved from a prior save | Fixed in `WindowPlacement.EnsureAccessible`. Existing bad coordinates self-heal on next launch. |
 
 ## Deferred engineering notes
 
