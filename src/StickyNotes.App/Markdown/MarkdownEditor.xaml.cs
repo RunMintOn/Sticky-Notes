@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,6 +22,9 @@ public partial class MarkdownEditor : UserControl
     private int _hoverLine;
     private bool _revealMarkersOnHover;
     private bool _overlayUpdatePending;
+    private string _assetRoot = "";
+    private string? _previewFullPath;
+    private int _previewRequest;
     private CodeBlockAppearance _codeBlockAppearance = new(
         -4, -4, 3, 3, 5, 39, 24, 5, 7);
 
@@ -35,7 +40,9 @@ public partial class MarkdownEditor : UserControl
 
         _markerGenerator = new MarkdownMarkerGenerator(TextEditor.Document, IsLineRevealed);
         _colorizer = new MarkdownColorizer();
-        _imageGenerator = new MarkdownImageGenerator(TextEditor.Document, line => line == _activeLine);
+        _imageGenerator = new MarkdownImageGenerator(
+            (Style)FindResource("ImageLinkButton"),
+            ShowImagePreview);
         _listGenerator = new MarkdownListGenerator(TextEditor.Document, IsLineRevealed);
         _ruleGenerator = new MarkdownRuleGenerator(TextEditor.Document, TextEditor.TextArea.TextView, IsLineRevealed);
         _codeBlockLayer = new MarkdownCodeBlockLayer(
@@ -88,7 +95,7 @@ public partial class MarkdownEditor : UserControl
 
     public string AssetRoot
     {
-        set => _imageGenerator.AssetRoot = value;
+        set => _assetRoot = value;
     }
 
     public bool RevealMarkersOnHover
@@ -139,8 +146,9 @@ public partial class MarkdownEditor : UserControl
     public void InsertMarkdownImage(string relativePath)
     {
         var syntax = $"![image]({relativePath})";
-        TextEditor.Document.Replace(TextEditor.SelectionStart, TextEditor.SelectionLength, syntax);
-        TextEditor.CaretOffset = TextEditor.SelectionStart + syntax.Length;
+        var insertionOffset = TextEditor.SelectionStart;
+        TextEditor.Document.Replace(insertionOffset, TextEditor.SelectionLength, syntax);
+        TextEditor.CaretOffset = insertionOffset + syntax.Length;
     }
 
     public void ToggleBullets()
@@ -232,6 +240,12 @@ public partial class MarkdownEditor : UserControl
 
     private void TextEditor_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Escape && ImagePreviewPopup.IsOpen)
+        {
+            ImagePreviewPopup.IsOpen = false;
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None && AutoContinueLists)
         {
             var result = MarkdownEditing.ContinueList(TextEditor.Text, TextEditor.CaretOffset);
@@ -244,7 +258,7 @@ public partial class MarkdownEditor : UserControl
             }
         }
         if (Keyboard.Modifiers != ModifierKeys.Control) return;
-        if (e.Key == Key.V && Clipboard.ContainsImage())
+        if (e.Key == Key.V && ClipboardContainsImage())
         {
             PasteImageRequested?.Invoke(this, EventArgs.Empty);
             e.Handled = true;
@@ -269,6 +283,69 @@ public partial class MarkdownEditor : UserControl
         {
             ToggleStrikethrough();
             e.Handled = true;
+        }
+    }
+
+    private static bool ClipboardContainsImage()
+    {
+        try
+        {
+            return Clipboard.ContainsImage();
+        }
+        catch (ExternalException)
+        {
+            return false;
+        }
+    }
+
+    private async void ShowImagePreview(MarkdownImageSpan image)
+    {
+        var request = ++_previewRequest;
+        _previewFullPath = null;
+        ImagePreviewName.Text = string.IsNullOrWhiteSpace(image.AltText) ? "Image" : image.AltText;
+        ImagePreviewDetails.Text = "Loading…";
+        ImagePreviewSource.Source = null;
+        ImagePreviewUnavailable.Visibility = Visibility.Collapsed;
+        OpenImageOriginalButton.IsEnabled = false;
+        ImagePreviewScrim.Visibility = Visibility.Visible;
+        ImagePreviewPopup.IsOpen = true;
+
+        var preview = await Task.Run(() => MarkdownImagePreviewLoader.Load(_assetRoot, image));
+        if (request != _previewRequest || !ImagePreviewPopup.IsOpen) return;
+
+        ImagePreviewName.Text = preview.Name;
+        ImagePreviewDetails.Text = preview.Details;
+        ImagePreviewSource.Source = preview.Source;
+        ImagePreviewUnavailable.Visibility = preview.Source is null
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        _previewFullPath = preview.FullPath;
+        OpenImageOriginalButton.IsEnabled = preview.FullPath is not null;
+    }
+
+    private void ImagePreviewScrim_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) =>
+        ImagePreviewPopup.IsOpen = false;
+
+    private void ImagePreviewPopup_Closed(object? sender, EventArgs e)
+    {
+        _previewRequest++;
+        _previewFullPath = null;
+        ImagePreviewScrim.Visibility = Visibility.Collapsed;
+    }
+
+    private void CloseImagePreview_Click(object sender, RoutedEventArgs e) =>
+        ImagePreviewPopup.IsOpen = false;
+
+    private void OpenImageOriginal_Click(object sender, RoutedEventArgs e)
+    {
+        if (_previewFullPath is null) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(_previewFullPath) { UseShellExecute = true });
+        }
+        catch (Exception)
+        {
+            // The system viewer is optional; a launch failure must not close the note.
         }
     }
 

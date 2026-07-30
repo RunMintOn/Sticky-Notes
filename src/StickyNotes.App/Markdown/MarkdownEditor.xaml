@@ -76,9 +76,38 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="ImageLinkButton" TargetType="Button">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="Foreground" Value="#B9D9EB"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Background" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#24FFFFFF"/>
+                                <Setter Property="Foreground" Value="#EAF7FF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#36FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource NoteBackground}">
+    <Grid x:Name="EditorRoot" Background="{StaticResource NoteBackground}">
         <Canvas x:Name="CodeBlockBackground" Background="{x:Null}" IsHitTestVisible="False"/>
         <avalonEdit:TextEditor x:Name="TextEditor"
                            Background="Transparent"
@@ -97,5 +126,51 @@
                            HorizontalScrollBarVisibility="Disabled"
                                VerticalScrollBarVisibility="Auto"/>
         <Canvas x:Name="CodeBlockOverlay" Background="{x:Null}"/>
+
+        <Border x:Name="ImagePreviewScrim" Background="#66000000" Visibility="Collapsed"
+                MouseLeftButtonDown="ImagePreviewScrim_MouseLeftButtonDown"/>
+
+        <Popup x:Name="ImagePreviewPopup" PlacementTarget="{Binding ElementName=EditorRoot}"
+               Placement="Center" AllowsTransparency="True" StaysOpen="False"
+               PopupAnimation="Fade" Closed="ImagePreviewPopup_Closed">
+            <Border Width="420" Height="320" Background="#3D3D3D" BorderBrush="#5B5B5B"
+                    BorderThickness="1" CornerRadius="9">
+                <Grid ClipToBounds="True">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="43"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="13,0,8,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="ImagePreviewName" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource PrimaryText}" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="ImagePreviewDetails" FontSize="11"
+                                       Foreground="{StaticResource SecondaryText}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="OpenImageOriginalButton" Content="↗" Width="29" Height="29" Margin="0,0,2,0"
+                                    Background="Transparent" Foreground="{StaticResource PrimaryText}"
+                                    BorderThickness="0" FontSize="17" Cursor="Hand"
+                                    ToolTip="Open original" Click="OpenImageOriginal_Click"/>
+                            <Button Content="×" Width="29" Height="29" Background="Transparent"
+                                    Foreground="{StaticResource PrimaryText}" BorderThickness="0"
+                                    FontSize="18" Cursor="Hand" ToolTip="Close"
+                                    Click="CloseImagePreview_Click"/>
+                        </StackPanel>
+                    </Grid>
+                    <Grid Grid.Row="1" Background="#292929">
+                        <Image x:Name="ImagePreviewSource" Stretch="Uniform"/>
+                        <TextBlock x:Name="ImagePreviewUnavailable" Text="Image unavailable"
+                                   Foreground="{StaticResource SecondaryText}" FontSize="14"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Popup>
     </Grid>
 </UserControl>

@@ -1,35 +1,29 @@
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using ICSharpCode.AvalonEdit.Document;
+using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.Rendering;
 
 namespace StickyNotes.App.Markdown;
 
 internal sealed class MarkdownImageGenerator : VisualLineElementGenerator
 {
-    private readonly TextDocument _document;
-    private readonly Func<int, bool> _isLineActive;
-    private readonly Dictionary<string, ImageSource?> _cache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Style _buttonStyle;
+    private readonly Action<MarkdownImageSpan> _preview;
     private IReadOnlyList<MarkdownImageSpan> _images = [];
 
-    internal MarkdownImageGenerator(TextDocument document, Func<int, bool> isLineActive)
+    internal MarkdownImageGenerator(Style buttonStyle, Action<MarkdownImageSpan> preview)
     {
-        _document = document;
-        _isLineActive = isLineActive;
+        _buttonStyle = buttonStyle;
+        _preview = preview;
     }
 
-    internal string AssetRoot { get; set; } = "";
     internal void Update(IReadOnlyList<MarkdownImageSpan> images) => _images = images;
 
     public override int GetFirstInterestedOffset(int startOffset)
     {
         foreach (var image in _images)
         {
-            if (image.Start < startOffset) continue;
-            if (!_isLineActive(_document.GetLineByOffset(image.Start).LineNumber)) return image.Start;
+            if (image.Start >= startOffset) return image.Start;
         }
         return -1;
     }
@@ -37,65 +31,33 @@ internal sealed class MarkdownImageGenerator : VisualLineElementGenerator
     public override VisualLineElement? ConstructElement(int offset)
     {
         var span = _images.FirstOrDefault(image => image.Start == offset);
-        if (span.Length == 0 || _isLineActive(_document.GetLineByOffset(offset).LineNumber)) return null;
+        if (span.Length == 0) return null;
 
-        var source = Load(span.Url);
-        UIElement element = source is null
-            ? new Border
-            {
-                Background = new SolidColorBrush(Color.FromRgb(64, 64, 64)),
-                Padding = new Thickness(10, 6, 10, 6),
-                Child = new TextBlock
-                {
-                    Text = $"Image unavailable · {span.AltText}",
-                    Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170)),
-                    FontSize = 13
-                }
-            }
-            : new Image
-            {
-                Source = source,
-                MaxWidth = 440,
-                MaxHeight = 260,
-                Stretch = Stretch.Uniform,
-                Margin = new Thickness(0, 5, 0, 5),
-                IsHitTestVisible = false
-            };
-        return new InlineObjectElement(span.Length, element);
+        var button = new Button
+        {
+            Content = "▧",
+            Style = _buttonStyle,
+            ToolTip = string.IsNullOrWhiteSpace(span.AltText)
+                ? "Preview image"
+                : $"Preview {span.AltText}",
+            Focusable = false,
+            IsTabStop = false,
+            Tag = span
+        };
+        button.Click += Preview_Click;
+
+        // The button visually replaces Markdown's leading '!'. The underlying document is unchanged.
+        return new InlineObjectElement(1, button);
     }
 
-    private ImageSource? Load(string url)
+    private void Preview_Click(object sender, RoutedEventArgs e)
     {
-        if (_cache.TryGetValue(url, out var cached)) return cached;
-        ImageSource? source = null;
-        try
+        if (sender is Button { Tag: MarkdownImageSpan span } button)
         {
-            if (Uri.TryCreate(url, UriKind.Absolute, out var absolute) &&
-                (absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeHttps))
-            {
-                // Remote loading is deliberately deferred; it must never block the editor thread.
-                source = null;
-            }
-            else
-            {
-                var normalized = Uri.UnescapeDataString(url.Replace('/', Path.DirectorySeparatorChar));
-                var path = Path.IsPathRooted(normalized) ? normalized : Path.Combine(AssetRoot, normalized);
-                if (File.Exists(path))
-                {
-                    var bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.DecodePixelWidth = 880;
-                    bitmap.UriSource = new Uri(path, UriKind.Absolute);
-                    bitmap.EndInit();
-                    bitmap.Freeze();
-                    source = bitmap;
-                }
-            }
+            // Opening the popup changes editor focus. Defer it until AvalonEdit finishes
+            // dispatching the inline element click to avoid a re-entrant visual-line rebuild.
+            button.Dispatcher.BeginInvoke(DispatcherPriority.Input, () => _preview(span));
         }
-        catch (Exception exception) when (exception is IOException or NotSupportedException or UriFormatException) { }
-
-        _cache[url] = source;
-        return source;
+        e.Handled = true;
     }
 }

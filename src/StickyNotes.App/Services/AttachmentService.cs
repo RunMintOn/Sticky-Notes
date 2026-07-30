@@ -14,32 +14,40 @@ internal sealed class AttachmentService
 
     internal string? ImportFromClipboardOrPicker(NoteItem note)
     {
-        if (Clipboard.ContainsImage())
+        try
         {
-            var bitmap = Clipboard.GetImage();
-            if (bitmap is null) return null;
-            var fileName = $"{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.png";
-            var relativePath = RelativePath(note, fileName);
-            var fullPath = PreparePath(relativePath);
-            using var stream = File.Create(fullPath);
-            var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            encoder.Save(stream);
-            return relativePath.Replace('\\', '/');
+            if (Clipboard.ContainsImage())
+            {
+                var bitmap = Clipboard.GetImage();
+                if (bitmap is null) return null;
+                var fileName = $"{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.png";
+                var relativePath = RelativePath(note, fileName);
+                var fullPath = PreparePath(relativePath);
+                using var stream = File.Create(fullPath);
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                encoder.Save(stream);
+                return relativePath.Replace('\\', '/');
+            }
+
+            var picker = new OpenFileDialog
+            {
+                Title = "Insert image",
+                Filter = "Images|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.webp|All files|*.*"
+            };
+            if (picker.ShowDialog() != true) return null;
+
+            var extension = Path.GetExtension(picker.FileName);
+            var importedName = $"{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}{extension}";
+            var importedRelativePath = RelativePath(note, importedName);
+            File.Copy(picker.FileName, PreparePath(importedRelativePath));
+            return importedRelativePath.Replace('\\', '/');
         }
-
-        var picker = new OpenFileDialog
+        catch (Exception)
         {
-            Title = "Insert image",
-            Filter = "Images|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.webp|All files|*.*"
-        };
-        if (picker.ShowDialog() != true) return null;
-
-        var extension = Path.GetExtension(picker.FileName);
-        var importedName = $"{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}{extension}";
-        var importedRelativePath = RelativePath(note, importedName);
-        File.Copy(picker.FileName, PreparePath(importedRelativePath));
-        return importedRelativePath.Replace('\\', '/');
+            // Clipboard formats and selected files are untrusted input. Import failure stays local.
+            return null;
+        }
     }
 
     private static string RelativePath(NoteItem note, string fileName) =>
