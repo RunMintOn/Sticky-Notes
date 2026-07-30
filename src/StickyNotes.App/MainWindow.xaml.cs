@@ -47,7 +47,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void AddNote_Click(object sender, RoutedEventArgs e) => _createNote();
 
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+    private void Minimize_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState.Minimized;
 
     private void Settings_Click(object sender, RoutedEventArgs e) => ShowSettingsPage();
     private void Help_Click(object sender, RoutedEventArgs e) => ShowHelpPage();

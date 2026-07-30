@@ -300,6 +300,7 @@ public sealed class UserSettings : INotifyPropertyChanged
         SetResource("PinNoteText", zh ? "置顶便签" : "Pin note");
         SetResource("UnpinNoteText", zh ? "取消置顶" : "Unpin note");
         SetResource("HelpText", zh ? "帮助与快捷键" : "Help & shortcuts");
+        SetResource("MinimizeText", zh ? "最小化" : "Minimize");
         SetResource("CopyCodeText", zh ? "复制代码" : "Copy code");
         SetResource("CodeBlockTuningText", zh ? "代码块调试（实验性）" : "Code block tuning (experimental)");
         SetResource("CodeBlockLeftText", zh ? "左边缘偏移" : "Left edge offset");

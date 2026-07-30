@@ -40,8 +40,8 @@
                         Click="Help_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="{DynamicResource HelpText}"/>
                 <Button x:Name="SettingsButton" Content="&#xE713;" Style="{StaticResource ChromeButton}" Foreground="#AAAAAA"
                         Click="Settings_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="{DynamicResource SettingsText}"/>
-                <Button Content="&#xE8BB;" Style="{StaticResource ChromeButton}" Foreground="#AAAAAA"
-                        Click="Close_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Close"/>
+                <Button Content="&#xE921;" Style="{StaticResource ChromeButton}" Foreground="#AAAAAA"
+                        Click="Minimize_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="{DynamicResource MinimizeText}"/>
             </StackPanel>
         </Grid>
 
