@@ -15,6 +15,8 @@ public partial class App : Application
         base.OnStartup(e);
 
         _settings = new UserSettings();
+        _settings.ValuesChanged += Settings_ValuesChanged;
+        ApplicationResourceUpdater.Apply(_settings);
         _store = new NoteStore();
         await _store.LoadAsync();
 
@@ -89,8 +91,12 @@ public partial class App : Application
             _store.Delete(note);
     }
 
+    private void Settings_ValuesChanged(object? sender, EventArgs e) =>
+        ApplicationResourceUpdater.Apply(_settings);
+
     protected override void OnExit(ExitEventArgs e)
     {
+        if (_settings is not null) _settings.ValuesChanged -= Settings_ValuesChanged;
         _store?.SaveNow();
         base.OnExit(e);
     }

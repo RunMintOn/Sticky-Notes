@@ -79,7 +79,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Activate();
     }
 
-    private void SettingsBack_Click(object sender, RoutedEventArgs e)
+    private void PageBack_Requested(object sender, RoutedEventArgs e)
     {
         SettingsPage.Visibility = Visibility.Collapsed;
         HelpPage.Visibility = Visibility.Collapsed;
@@ -89,10 +89,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SettingsButton.Visibility = Visibility.Visible;
         HelpButton.Visibility = Visibility.Visible;
     }
-
-    private void HelpBack_Click(object sender, RoutedEventArgs e) => SettingsBack_Click(sender, e);
-
-    private void SettingsReset_Click(object sender, RoutedEventArgs e) => Settings.Reset();
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {

@@ -2,9 +2,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Windows;
 using System.Windows.Threading;
-using System.Windows.Media;
 using StickyNotes.App.Markdown;
 
 namespace StickyNotes.App.Services;
@@ -78,7 +76,6 @@ public sealed class UserSettings : INotifyPropertyChanged
 
         _saveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
         _saveTimer.Tick += (_, _) => Save();
-        Apply();
     }
 
     public double OverallScale
@@ -173,6 +170,7 @@ public sealed class UserSettings : INotifyPropertyChanged
         CodeBlockCopyButtonRightOffset);
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public event EventHandler? ValuesChanged;
 
     public void Reset()
     {
@@ -225,97 +223,10 @@ public sealed class UserSettings : INotifyPropertyChanged
 
     private void Changed()
     {
-        Apply();
+        ValuesChanged?.Invoke(this, EventArgs.Empty);
         _saveTimer.Stop();
         _saveTimer.Start();
     }
-
-    private void Apply()
-    {
-        SetResource("TitleFontSize", 27 * TextScale);
-        SetResource("ListFontSize", 18 * TextScale);
-        SetResource("EditorFontSize", 18 * TextScale);
-        SetResource("MenuFontSize", 17 * TextScale);
-        SetResource("ChromeIconSize", 16 * IconScale);
-        SetResource("ToolbarIconSize", 18 * IconScale);
-        SetResource("HeaderHeight", 40 * OverallScale);
-        SetResource("ToolbarHeight", 49 * OverallScale);
-        SetResource("HeaderGridLength", new GridLength(40 * OverallScale));
-        SetResource("ToolbarGridLength", new GridLength(49 * OverallScale));
-        SetResource("ChromeButtonExtent", 45 * OverallScale);
-        SetResource("FormatButtonWidth", 52 * OverallScale);
-        SetResource("FormatButtonHeight", 48 * OverallScale);
-        SetResource("NoteMenuWidth", 365 * OverallScale);
-        SetResource("NoteMenuPaletteHeight", 54 * OverallScale);
-        SetResource("NoteMenuRowHeight", 62 * OverallScale);
-        SetResource("NoteCardHeight", 174 * OverallScale);
-        SetResource("NoteCardMinHeight", 105 * OverallScale);
-
-        var rendering = RenderingProfile switch
-        {
-            "Crisp aliased" => new TextRenderingValues(
-                "Microsoft YaHei UI", TextFormattingMode.Display, TextRenderingMode.Aliased, TextHintingMode.Fixed),
-            "Balanced system text" => new TextRenderingValues(
-                "Segoe UI", TextFormattingMode.Display, TextRenderingMode.Auto, TextHintingMode.Fixed),
-            "Smooth grayscale" => new TextRenderingValues(
-                "Segoe UI", TextFormattingMode.Ideal, TextRenderingMode.Grayscale, TextHintingMode.Animated),
-            _ => new TextRenderingValues(
-                "Microsoft YaHei UI", TextFormattingMode.Display, TextRenderingMode.ClearType, TextHintingMode.Fixed)
-        };
-        SetResource("InterfaceFontFamily", new FontFamily(rendering.FontFamily));
-        SetResource("EditorFontFamily", new FontFamily(rendering.FontFamily));
-        SetResource("TextFormattingMode", rendering.FormattingMode);
-        SetResource("TextRenderingMode", rendering.RenderingMode);
-        SetResource("TextHintingMode", rendering.HintingMode);
-
-        var zh = Language == "中文";
-        SetResource("AppNameText", zh ? "便笺" : "Sticky Notes");
-        SetResource("SearchText", zh ? "搜索…" : "Search...");
-        SetResource("SettingsText", zh ? "设置" : "Settings");
-        SetResource("AppearanceText", zh ? "外观" : "Appearance");
-        SetResource("LayoutScaleText", zh ? "界面缩放" : "Layout scale");
-        SetResource("LayoutScaleHelp", zh ? "控件高度、间距、卡片和菜单" : "Control heights, spacing, cards, and menus");
-        SetResource("TextScaleText", zh ? "文字缩放" : "Text scale");
-        SetResource("TextScaleHelp", zh ? "便签正文、列表、搜索和菜单文字" : "Note content, lists, search, and menu labels");
-        SetResource("IconScaleText", zh ? "图标缩放" : "Icon scale");
-        SetResource("IconScaleHelp", zh ? "窗口命令和格式工具" : "Title-bar commands and formatting tools");
-        SetResource("TextRenderingText", zh ? "文字渲染" : "Text rendering");
-        SetResource("EditingText", zh ? "编辑" : "Editing");
-        SetResource("HoverMarkersText", zh ? "鼠标经过一行时显示 Markdown 标记" : "Reveal Markdown markers when the pointer hovers over a line");
-        SetResource("HoverMarkersHelp", zh ? "关闭后，仅在光标所在行显示标记。" : "When disabled, markers appear only on the line containing the caret.");
-        SetResource("ContinueListsText", zh ? "按回车时自动续写列表" : "Continue lists when pressing Enter");
-        SetResource("ContinueListsHelp", zh ? "支持项目符号、编号列表、任务列表和引用。" : "Supports bullets, numbered lists, tasks, and block quotes.");
-        SetResource("LanguageText", zh ? "语言" : "Language");
-        SetResource("ResetSettingsText", zh ? "重置所有设置" : "Reset all settings");
-        SetResource("NewNoteText", zh ? "新建便签" : "New note");
-        SetResource("BringToFrontText", zh ? "将所有打开的便签移到前面" : "Bring all open notes to front");
-        SetResource("BackText", zh ? "返回" : "Back");
-        SetResource("MenuText", zh ? "菜单" : "Menu");
-        SetResource("InlineCodeText", zh ? "行内代码" : "Inline code");
-        SetResource("InsertImageText", zh ? "插入图片" : "Insert image");
-        SetResource("NotesListText", zh ? "便签列表" : "Notes list");
-        SetResource("DeleteNoteText", zh ? "删除便签" : "Delete note");
-        SetResource("OpenNoteText", zh ? "打开便签" : "Open note");
-        SetResource("CloseNoteText", zh ? "关闭便签" : "Close note");
-        SetResource("PinNoteText", zh ? "置顶便签" : "Pin note");
-        SetResource("UnpinNoteText", zh ? "取消置顶" : "Unpin note");
-        SetResource("HelpText", zh ? "帮助与快捷键" : "Help & shortcuts");
-        SetResource("MinimizeText", zh ? "最小化" : "Minimize");
-        SetResource("CopyCodeText", zh ? "复制代码" : "Copy code");
-        SetResource("CodeBlockTuningText", zh ? "代码块调试（实验性）" : "Code block tuning (experimental)");
-        SetResource("CodeBlockLeftText", zh ? "左边缘偏移" : "Left edge offset");
-        SetResource("CodeBlockRightText", zh ? "右边缘偏移" : "Right edge offset");
-        SetResource("CodeBlockTopText", zh ? "顶部扩展" : "Top extent");
-        SetResource("CodeBlockBottomText", zh ? "底部扩展" : "Bottom extent");
-        SetResource("CodeBlockRadiusText", zh ? "圆角半径" : "Corner radius");
-        SetResource("CodeBlockShadeText", zh ? "背景深浅" : "Background shade");
-        SetResource("CopySizeText", zh ? "复制图标大小" : "Copy icon size");
-        SetResource("CopyTopText", zh ? "复制图标顶部偏移" : "Copy icon top offset");
-        SetResource("CopyRightText", zh ? "复制图标右侧偏移" : "Copy icon right offset");
-    }
-
-    private static void SetResource(string key, object value) =>
-        Application.Current.Resources[key] = value;
 
     private void Save()
     {
@@ -350,10 +261,4 @@ public sealed class UserSettings : INotifyPropertyChanged
         double CodeBlockCopyButtonSize = 24,
         double CodeBlockCopyButtonTopOffset = 5,
         double CodeBlockCopyButtonRightOffset = 7);
-
-    private sealed record TextRenderingValues(
-        string FontFamily,
-        TextFormattingMode FormattingMode,
-        TextRenderingMode RenderingMode,
-        TextHintingMode HintingMode);
 }
