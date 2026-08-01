@@ -6,6 +6,15 @@ using StickyNotes.App.Models;
 
 namespace StickyNotes.App.Services;
 
+public enum NoteLoadStatus
+{
+    Loaded,
+    NoData,
+    RecoveredMissingPrimary,
+    RecoveredInvalidPrimary,
+    InvalidWithoutBackup
+}
+
 public sealed class NoteStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
@@ -21,20 +30,40 @@ public sealed class NoteStore
 
     public ObservableCollection<NoteItem> Notes { get; } = [];
 
-    public async Task LoadAsync()
+    public async Task<NoteLoadStatus> LoadAsync()
     {
-        if (!File.Exists(_filePath)) return;
+        var backupPath = _filePath + ".backup";
+        if (!File.Exists(_filePath))
+        {
+            if (!File.Exists(backupPath)) return NoteLoadStatus.NoData;
+            await LoadFromAsync(backupPath);
+            return NoteLoadStatus.RecoveredMissingPrimary;
+        }
 
         try
         {
-            await using var stream = File.OpenRead(_filePath);
-            var notes = await JsonSerializer.DeserializeAsync<List<NoteItem>>(stream, JsonOptions);
-            if (notes is null) return;
-            foreach (var note in notes) Notes.Add(note);
+            await LoadFromAsync(_filePath);
+            return NoteLoadStatus.Loaded;
         }
         catch (JsonException)
         {
             File.Copy(_filePath, _filePath + ".invalid", true);
+            if (!File.Exists(backupPath)) return NoteLoadStatus.InvalidWithoutBackup;
+            await LoadFromAsync(backupPath);
+            return NoteLoadStatus.RecoveredInvalidPrimary;
+        }
+    }
+
+    private async Task LoadFromAsync(string path)
+    {
+        await using var stream = File.OpenRead(path);
+        var notes = await JsonSerializer.DeserializeAsync<List<NoteItem>>(stream, JsonOptions);
+        if (notes is null) return;
+        foreach (var note in notes)
+        {
+            note.Markdown = NormalizeLineEndings(note.Markdown);
+            note.PlainText = NormalizeLineEndings(note.PlainText);
+            Notes.Add(note);
         }
     }
 
@@ -55,9 +84,12 @@ public sealed class NoteStore
 
     public bool UpdateContent(NoteItem note, string markdown, DateTimeOffset updatedAt)
     {
-        var normalized = markdown.TrimEnd('\r', '\n');
+        var normalized = NormalizeLineEndings(markdown).TrimEnd('\n');
         var current = string.IsNullOrEmpty(note.Markdown) ? note.PlainText : note.Markdown;
-        if (string.Equals(current.TrimEnd('\r', '\n'), normalized, StringComparison.Ordinal))
+        if (string.Equals(
+                NormalizeLineEndings(current).TrimEnd('\n'),
+                normalized,
+                StringComparison.Ordinal))
             return false;
 
         note.Markdown = normalized;
@@ -90,11 +122,32 @@ public sealed class NoteStore
         catch (OperationCanceledException) { }
     }
 
+    private static string NormalizeLineEndings(string text) =>
+        text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+
     public void SaveNow()
     {
         _scheduledSave?.Cancel();
         var tempPath = _filePath + ".tmp";
-        File.WriteAllText(tempPath, JsonSerializer.Serialize(Notes.ToArray(), JsonOptions));
-        File.Move(tempPath, _filePath, true);
+        var backupPath = _filePath + ".backup";
+        try
+        {
+            using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var writer = new StreamWriter(stream))
+            {
+                writer.Write(JsonSerializer.Serialize(Notes.ToArray(), JsonOptions));
+                writer.Flush();
+                stream.Flush(flushToDisk: true);
+            }
+
+            if (File.Exists(_filePath))
+                File.Replace(tempPath, _filePath, backupPath, ignoreMetadataErrors: true);
+            else
+                File.Move(tempPath, _filePath);
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
     }
 }

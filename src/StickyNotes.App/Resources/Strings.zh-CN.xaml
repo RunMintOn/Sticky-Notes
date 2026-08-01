@@ -44,4 +44,8 @@
     <system:String x:Key="CopySizeText">复制图标大小</system:String>
     <system:String x:Key="CopyTopText">复制图标顶部偏移</system:String>
     <system:String x:Key="CopyRightText">复制图标右侧偏移</system:String>
+    <system:String x:Key="DataRecoveryTitle">请检查恢复的便签</system:String>
+    <system:String x:Key="RecoveredMissingPrimaryText">主笔记文件缺失，便笺已改为读取上一份备份。备份可能不包含最近的修改，请检查笔记是否完整。&#x0A;&#x0A;数据文件夹：&#x0A;{0}</system:String>
+    <system:String x:Key="RecoveredInvalidPrimaryText">主笔记文件已损坏，便笺已改为读取上一份备份。备份可能不包含最近的修改，请检查笔记是否完整。&#x0A;&#x0A;损坏文件已保留为 notes.json.invalid，位置：&#x0A;{0}</system:String>
+    <system:String x:Key="RecoveryFailedText">主笔记文件已损坏，而且没有可用的备份。便笺已将损坏文件保留为 notes.json.invalid。请勿认为当前空列表代表笔记完整。&#x0A;&#x0A;数据文件夹：&#x0A;{0}</system:String>
 </ResourceDictionary>

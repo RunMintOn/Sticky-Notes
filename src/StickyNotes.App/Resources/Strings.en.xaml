@@ -44,4 +44,8 @@
     <system:String x:Key="CopySizeText">Copy icon size</system:String>
     <system:String x:Key="CopyTopText">Copy icon top offset</system:String>
     <system:String x:Key="CopyRightText">Copy icon right offset</system:String>
+    <system:String x:Key="DataRecoveryTitle">Check your recovered notes</system:String>
+    <system:String x:Key="RecoveredMissingPrimaryText">The main notes file was missing, so Sticky Notes opened the previous backup. The backup may not include your most recent changes. Please review your notes.&#x0A;&#x0A;Data folder:&#x0A;{0}</system:String>
+    <system:String x:Key="RecoveredInvalidPrimaryText">The main notes file was damaged, so Sticky Notes opened the previous backup. The backup may not include your most recent changes. Please review your notes.&#x0A;&#x0A;The damaged file was preserved as notes.json.invalid in:&#x0A;{0}</system:String>
+    <system:String x:Key="RecoveryFailedText">The main notes file was damaged and no usable backup was available. Sticky Notes preserved the damaged file as notes.json.invalid. Do not assume that the empty list is complete.&#x0A;&#x0A;Data folder:&#x0A;{0}</system:String>
 </ResourceDictionary>

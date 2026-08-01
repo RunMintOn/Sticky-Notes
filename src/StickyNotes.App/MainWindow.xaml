@@ -81,7 +81,7 @@
                      Background="Transparent" BorderThickness="0" Foreground="{StaticResource PrimaryText}"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      ScrollViewer.CanContentScroll="True"
-                     VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                     VirtualizingPanel.IsVirtualizing="False"
                      VirtualizingPanel.ScrollUnit="Pixel"
                      MouseDoubleClick="NotesList_MouseDoubleClick"
                      PreviewMouseWheel="NotesList_PreviewMouseWheel">

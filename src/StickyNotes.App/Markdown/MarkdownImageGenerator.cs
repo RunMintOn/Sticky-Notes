@@ -58,7 +58,7 @@ internal sealed class MarkdownImageGenerator : VisualLineElementGenerator, IBack
     internal void Refresh(TextView textView)
     {
         _overlay.Children.Clear();
-        if (textView.VisualLines.Count == 0) return;
+        if (!textView.VisualLinesValid || textView.VisualLines.Count == 0) return;
 
         foreach (var span in _images.Where(image => image.IsStandalone))
         {

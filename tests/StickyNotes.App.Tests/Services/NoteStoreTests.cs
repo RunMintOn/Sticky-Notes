@@ -41,4 +41,100 @@ public sealed class NoteStoreTests
         Assert.Equal(editedAt, note.UpdatedAt);
         Assert.Same(note, store.Notes[0]);
     }
+
+    [Fact]
+    public void EditingNormalizesAllLineEndingsToLf()
+    {
+        var store = new NoteStore(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+        var note = new NoteItem { Markdown = "old" };
+        store.Notes.Add(note);
+
+        store.UpdateContent(note, "first\r\nsecond\rthird\nfourth", DateTimeOffset.Now);
+
+        Assert.Equal("first\nsecond\nthird\nfourth", note.Markdown);
+        Assert.DoesNotContain('\r', note.Markdown);
+    }
+
+    [Fact]
+    public async Task SavingKeepsThePreviousVersionAsBackup()
+    {
+        var directory = NewDataDirectory();
+        try
+        {
+            var store = new NoteStore(directory);
+            var note = new NoteItem { Markdown = "first", PlainText = "first", Left = 80, Top = 80 };
+            store.Notes.Add(note);
+            store.SaveNow();
+            note.Markdown = note.PlainText = "second";
+            store.SaveNow();
+
+            File.Delete(Path.Combine(directory, "notes.json"));
+            var restored = new NoteStore(directory);
+            var status = await restored.LoadAsync();
+
+            Assert.Equal(NoteLoadStatus.RecoveredMissingPrimary, status);
+            Assert.Equal("first", Assert.Single(restored.Notes).Markdown);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InvalidPrimaryFileIsPreservedAndRecoveredFromBackup()
+    {
+        var directory = NewDataDirectory();
+        try
+        {
+            var store = new NoteStore(directory);
+            var note = new NoteItem { Markdown = "recoverable", PlainText = "recoverable", Left = 80, Top = 80 };
+            store.Notes.Add(note);
+            store.SaveNow();
+            note.Markdown = note.PlainText = "latest";
+            store.SaveNow();
+            var primaryPath = Path.Combine(directory, "notes.json");
+            await File.WriteAllTextAsync(primaryPath, "not json");
+
+            var restored = new NoteStore(directory);
+            var status = await restored.LoadAsync();
+
+            Assert.Equal(NoteLoadStatus.RecoveredInvalidPrimary, status);
+            Assert.Equal("recoverable", Assert.Single(restored.Notes).Markdown);
+            Assert.Equal("not json", await File.ReadAllTextAsync(primaryPath + ".invalid"));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InvalidPrimaryWithoutBackupIsReportedAndPreserved()
+    {
+        var directory = NewDataDirectory();
+        try
+        {
+            var primaryPath = Path.Combine(directory, "notes.json");
+            await File.WriteAllTextAsync(primaryPath, "not json");
+
+            var restored = new NoteStore(directory);
+            var status = await restored.LoadAsync();
+
+            Assert.Equal(NoteLoadStatus.InvalidWithoutBackup, status);
+            Assert.Empty(restored.Notes);
+            Assert.Equal("not json", await File.ReadAllTextAsync(primaryPath + ".invalid"));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private static string NewDataDirectory()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        return directory;
+    }
 }

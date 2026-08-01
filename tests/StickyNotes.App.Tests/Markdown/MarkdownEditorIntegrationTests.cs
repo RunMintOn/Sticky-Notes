@@ -19,6 +19,9 @@ public sealed class MarkdownEditorIntegrationTests
             application.InitializeComponent();
 
             var editor = new MarkdownEditor();
+            editor.Text = "first\r\nsecond\rthird";
+            Assert.Equal("first\nsecond\nthird", editor.Text);
+            editor.Text = "";
             Assert.Equal(new Size(720, 520), editor.ImagePreviewSize);
             editor.ImagePreviewSize = new Size(800, 600);
             Assert.Equal(new Size(800, 600), editor.ImagePreviewSize);

@@ -18,11 +18,12 @@ public partial class App : Application
         _settings.ValuesChanged += Settings_ValuesChanged;
         ApplicationResourceUpdater.Apply(_settings);
         _store = new NoteStore();
-        await _store.LoadAsync();
+        var loadStatus = await _store.LoadAsync();
 
         var mainWindow = new MainWindow(_store, _settings, OpenNote, CloseNote, DeleteNote, CreateNote);
         MainWindow = mainWindow;
         mainWindow.Show();
+        ShowLoadWarning(mainWindow, loadStatus);
 
         foreach (var note in _store.Notes.Where(note => note.IsOpen).ToArray())
             OpenNote(note);
@@ -32,6 +33,24 @@ public partial class App : Application
 
         if (e.Args.Contains("--settings", StringComparer.OrdinalIgnoreCase))
             mainWindow.ShowSettingsPage();
+    }
+
+    private static void ShowLoadWarning(Window owner, NoteLoadStatus status)
+    {
+        var messageKey = status switch
+        {
+            NoteLoadStatus.RecoveredMissingPrimary => "RecoveredMissingPrimaryText",
+            NoteLoadStatus.RecoveredInvalidPrimary => "RecoveredInvalidPrimaryText",
+            NoteLoadStatus.InvalidWithoutBackup => "RecoveryFailedText",
+            _ => null
+        };
+        if (messageKey is null) return;
+
+        var message = string.Format(
+            (string)Current.FindResource(messageKey),
+            AppDataDirectory.Resolve());
+        var title = (string)Current.FindResource("DataRecoveryTitle");
+        MessageBox.Show(owner, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     internal NoteItem CreateNote()

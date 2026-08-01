@@ -33,6 +33,10 @@ dotnet run --project .\src\StickyNotes.App\StickyNotes.App.csproj -c Release
 
 Data is stored in `%LOCALAPPDATA%\WinStickyNotes\notes.json`.
 
+For a desktop shortcut that always builds and starts the current source version, run
+`scripts/launch-latest.ps1` or point a shortcut to that script. Close an already running
+version before using the launcher.
+
 ## Build
 
 ```powershell

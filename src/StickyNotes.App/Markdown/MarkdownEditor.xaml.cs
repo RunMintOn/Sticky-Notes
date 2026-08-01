@@ -158,8 +158,9 @@ public partial class MarkdownEditor : UserControl
         get => TextEditor.Text;
         set
         {
-            if (TextEditor.Text == value) return;
-            TextEditor.Text = value;
+            var normalized = value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+            if (TextEditor.Text == normalized) return;
+            TextEditor.Text = normalized;
             RefreshPresentation();
         }
     }
