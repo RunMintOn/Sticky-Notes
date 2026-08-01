@@ -29,7 +29,7 @@ public sealed record HelpPageContent(string Title, string Introduction, IReadOnl
             new("Lists & media", [
                 new("Continue lists", "Enter continues bullets, numbers, tasks, and quotes. Enter on an empty item exits."),
                 new("Task list", "Use - [ ] for an open task and - [x] for a completed task."),
-                new("Images", "Paste an image or use the image command. Select the icon before its Markdown link to preview it.", "Ctrl+V")
+                new("Images", "Paste an image or use the image command. A standalone ![image](path) line shows the image below its editable Markdown; select the image for a larger preview.", "Ctrl+V")
             ]),
             new("Live Preview", [
                 new("Edit markers", "Move the caret onto a line to reveal its Markdown markers."),
@@ -62,7 +62,7 @@ public sealed record HelpPageContent(string Title, string Introduction, IReadOnl
             new("列表与图片", [
                 new("自动续写列表", "回车可续写项目符号、编号、任务和引用；空项目再次回车退出。"),
                 new("任务列表", "使用 - [ ] 表示未完成，使用 - [x] 表示已完成。"),
-                new("图片", "从剪贴板粘贴图片或使用图片命令；点击 Markdown 链接前的图标进行预览。", "Ctrl+V")
+                new("图片", "从剪贴板粘贴图片或使用图片命令；单独成行的 ![image](路径) 会在可编辑语法下显示图片，点击图片可查看大图。", "Ctrl+V")
             ]),
             new("实时预览", [
                 new("编辑标记", "将光标移到一行即可显示该行的 Markdown 标记。"),

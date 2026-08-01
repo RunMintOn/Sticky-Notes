@@ -31,7 +31,12 @@ internal readonly record struct MarkdownMarkerSpan(int Start, int Length)
     internal int End => Start + Length;
 }
 
-internal readonly record struct MarkdownImageSpan(int Start, int Length, string Url, string AltText);
+internal readonly record struct MarkdownImageSpan(
+    int Start,
+    int Length,
+    string Url,
+    string AltText,
+    bool IsStandalone);
 internal readonly record struct MarkdownListSpan(int Start, int Length, string DisplayText);
 public readonly record struct MarkdownRuleSpan(int Start, int Length);
 public readonly record struct MarkdownCodeBlockSpan(
@@ -173,7 +178,8 @@ public sealed class MarkdownPresentation
                 image.Span.Start,
                 image.Span.Length,
                 image.Url!,
-                image.Label ?? "image"));
+                image.Label ?? "image",
+                IsStandaloneLine(text, image.Span.Start, image.Span.Length)));
         }
 
         return new MarkdownPresentation
@@ -185,6 +191,17 @@ public sealed class MarkdownPresentation
             Rules = rules,
             CodeBlocks = codeBlocks
         };
+    }
+
+    private static bool IsStandaloneLine(string text, int start, int length)
+    {
+        var lineStart = text.LastIndexOf('\n', Math.Max(0, start - 1));
+        lineStart = lineStart < 0 ? 0 : lineStart + 1;
+        var lineEnd = text.IndexOf('\n', start + length);
+        if (lineEnd < 0) lineEnd = text.Length;
+
+        return string.IsNullOrWhiteSpace(text[lineStart..start]) &&
+               string.IsNullOrWhiteSpace(text[(start + length)..lineEnd]);
     }
 
     private static IReadOnlyList<MarkdownListSpan> ParseLinePrefixes(

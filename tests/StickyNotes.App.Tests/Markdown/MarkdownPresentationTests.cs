@@ -15,6 +15,17 @@ public sealed class MarkdownPresentationTests
     }
 
     [Fact]
+    public void OnlyStandaloneMarkdownImagesRequestDocumentSpace()
+    {
+        var presentation = MarkdownPresentation.Parse(
+            "  ![standalone](attachments/a.png)  \ntext ![inline](attachments/b.png) text\n[link](attachments/c.png)");
+
+        Assert.Equal(2, presentation.Images.Count);
+        Assert.True(presentation.Images[0].IsStandalone);
+        Assert.False(presentation.Images[1].IsStandalone);
+    }
+
+    [Fact]
     public void FencedCodeExposesItsContentAsACodeBlock()
     {
         var presentation = MarkdownPresentation.Parse("```csharp\nvar x = 1;\n```");

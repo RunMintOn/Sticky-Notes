@@ -41,8 +41,13 @@ public partial class MarkdownEditor : UserControl
         _markerGenerator = new MarkdownMarkerGenerator(TextEditor.Document, IsLineRevealed);
         _colorizer = new MarkdownColorizer();
         _imageGenerator = new MarkdownImageGenerator(
-            (Style)FindResource("ImageLinkButton"),
-            ShowImagePreview);
+            ImageOverlay,
+            ShowImagePreview,
+            delta => TextEditor.ScrollToVerticalOffset(Math.Max(
+                0,
+                TextEditor.VerticalOffset - Math.Sign(delta) *
+                TextEditor.TextArea.TextView.DefaultLineHeight * 3)),
+            ScheduleOverlays);
         _listGenerator = new MarkdownListGenerator(TextEditor.Document, IsLineRevealed);
         _ruleGenerator = new MarkdownRuleGenerator(TextEditor.Document, TextEditor.TextArea.TextView, IsLineRevealed);
         _codeBlockLayer = new MarkdownCodeBlockLayer(
@@ -53,6 +58,7 @@ public partial class MarkdownEditor : UserControl
         TextEditor.TextArea.TextView.ElementGenerators.Add(_ruleGenerator);
         TextEditor.TextArea.TextView.ElementGenerators.Add(_listGenerator);
         TextEditor.TextArea.TextView.ElementGenerators.Add(_imageGenerator);
+        TextEditor.TextArea.TextView.BackgroundRenderers.Add(_imageGenerator);
         TextEditor.TextArea.TextView.LineTransformers.Add(_colorizer);
 
         TextEditor.TextChanged += (_, _) =>
@@ -68,8 +74,8 @@ public partial class MarkdownEditor : UserControl
             TextEditor.TextArea.TextView.Redraw();
         };
         TextEditor.TextArea.TextView.MouseMove += TextView_MouseMove;
-        TextEditor.TextArea.TextView.VisualLinesChanged += (_, _) => ScheduleCodeBlockOverlay();
-        TextEditor.TextArea.TextView.ScrollOffsetChanged += (_, _) => ScheduleCodeBlockOverlay();
+        TextEditor.TextArea.TextView.VisualLinesChanged += (_, _) => ScheduleOverlays();
+        TextEditor.TextArea.TextView.ScrollOffsetChanged += (_, _) => ScheduleOverlays();
         TextEditor.TextArea.TextView.MouseLeave += (_, _) =>
         {
             if (_hoverLine == 0) return;
@@ -95,7 +101,11 @@ public partial class MarkdownEditor : UserControl
 
     public string AssetRoot
     {
-        set => _assetRoot = value;
+        set
+        {
+            _assetRoot = value;
+            _imageGenerator.AssetRoot = value;
+        }
     }
 
     public bool RevealMarkersOnHover
@@ -120,7 +130,7 @@ public partial class MarkdownEditor : UserControl
             _codeBlockAppearance = value;
             _codeBlockLayer.Update(_presentation.CodeBlocks, value);
             TextEditor.TextArea.TextView.Redraw();
-            ScheduleCodeBlockOverlay();
+            ScheduleOverlays();
         }
     }
 
@@ -145,9 +155,18 @@ public partial class MarkdownEditor : UserControl
 
     public void InsertMarkdownImage(string relativePath)
     {
-        var syntax = $"![image]({relativePath})";
+        var document = TextEditor.Document;
         var insertionOffset = TextEditor.SelectionStart;
-        TextEditor.Document.Replace(insertionOffset, TextEditor.SelectionLength, syntax);
+        var selectionEnd = insertionOffset + TextEditor.SelectionLength;
+        var startLine = document.GetLineByOffset(insertionOffset);
+        var endLine = document.GetLineByOffset(Math.Min(selectionEnd, document.TextLength));
+        var textBefore = document.GetText(startLine.Offset, insertionOffset - startLine.Offset);
+        var textAfter = document.GetText(selectionEnd, endLine.EndOffset - selectionEnd);
+        var prefix = string.IsNullOrWhiteSpace(textBefore) ? "" : "\n";
+        var suffix = string.IsNullOrWhiteSpace(textAfter) ? "" : "\n";
+        var syntax = $"{prefix}![image]({relativePath}){suffix}";
+
+        document.Replace(insertionOffset, TextEditor.SelectionLength, syntax);
         TextEditor.CaretOffset = insertionOffset + syntax.Length;
     }
 
@@ -373,16 +392,17 @@ public partial class MarkdownEditor : UserControl
         _ruleGenerator.Update(_presentation.Rules);
         _codeBlockLayer.Update(_presentation.CodeBlocks, CodeBlockAppearance);
         TextEditor.TextArea.TextView.Redraw();
-        ScheduleCodeBlockOverlay();
+        ScheduleOverlays();
     }
 
-    private void ScheduleCodeBlockOverlay()
+    private void ScheduleOverlays()
     {
         if (_overlayUpdatePending) return;
         _overlayUpdatePending = true;
         Dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
         {
             _overlayUpdatePending = false;
+            _imageGenerator.Refresh(TextEditor.TextArea.TextView);
             _codeBlockLayer.Refresh(TextEditor.TextArea.TextView, TextEditor.Document);
         });
     }
