@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using StickyNotes.App.Models;
 using StickyNotes.App.Services;
 
