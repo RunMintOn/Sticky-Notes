@@ -96,7 +96,11 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        if (_settings is not null) _settings.ValuesChanged -= Settings_ValuesChanged;
+        if (_settings is not null)
+        {
+            _settings.ValuesChanged -= Settings_ValuesChanged;
+            _settings.SaveNow();
+        }
         _store?.SaveNow();
         base.OnExit(e);
     }

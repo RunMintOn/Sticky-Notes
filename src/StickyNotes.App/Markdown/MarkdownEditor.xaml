@@ -106,44 +106,61 @@
         <Popup x:Name="ImagePreviewPopup" PlacementTarget="{Binding ElementName=EditorRoot}"
                Placement="Center" AllowsTransparency="True" StaysOpen="False"
                PopupAnimation="Fade" Closed="ImagePreviewPopup_Closed">
-            <Border Width="420" Height="320" Background="#3D3D3D" BorderBrush="#5B5B5B"
-                    BorderThickness="1" CornerRadius="9">
-                <Grid ClipToBounds="True">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="43"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Grid Grid.Row="0" Margin="13,0,8,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="ImagePreviewName" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="{StaticResource PrimaryText}" TextTrimming="CharacterEllipsis"/>
-                            <TextBlock x:Name="ImagePreviewDetails" FontSize="11"
-                                       Foreground="{StaticResource SecondaryText}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button x:Name="OpenImageOriginalButton" Content="↗" Width="29" Height="29" Margin="0,0,2,0"
-                                    Background="Transparent" Foreground="{StaticResource PrimaryText}"
-                                    BorderThickness="0" FontSize="17" Cursor="Hand"
-                                    ToolTip="Open original" Click="OpenImageOriginal_Click"/>
-                            <Button Content="×" Width="29" Height="29" Background="Transparent"
-                                    Foreground="{StaticResource PrimaryText}" BorderThickness="0"
-                                    FontSize="18" Cursor="Hand" ToolTip="Close"
-                                    Click="CloseImagePreview_Click"/>
-                        </StackPanel>
+            <Grid x:Name="ImagePreviewCard" Width="720" Height="520">
+                <Border Background="#3D3D3D" BorderBrush="#5B5B5B"
+                        BorderThickness="1" CornerRadius="9">
+                    <Grid ClipToBounds="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="43"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0" Margin="13,0,8,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock x:Name="ImagePreviewName" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryText}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock x:Name="ImagePreviewDetails" FontSize="11"
+                                           Foreground="{StaticResource SecondaryText}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button x:Name="OpenImageOriginalButton" Content="↗" Width="29" Height="29" Margin="0,0,2,0"
+                                        Background="Transparent" Foreground="{StaticResource PrimaryText}"
+                                        BorderThickness="0" FontSize="17" Cursor="Hand"
+                                        ToolTip="Open original" Click="OpenImageOriginal_Click"/>
+                                <Button Content="×" Width="29" Height="29" Background="Transparent"
+                                        Foreground="{StaticResource PrimaryText}" BorderThickness="0"
+                                        FontSize="18" Cursor="Hand" ToolTip="Close"
+                                        Click="CloseImagePreview_Click"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Grid.Row="1" Background="#292929">
+                            <Image x:Name="ImagePreviewSource" Stretch="Uniform"/>
+                            <TextBlock x:Name="ImagePreviewUnavailable" Text="Image unavailable"
+                                       Foreground="{StaticResource SecondaryText}" FontSize="14"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="Collapsed"/>
+                        </Grid>
                     </Grid>
-                    <Grid Grid.Row="1" Background="#292929">
-                        <Image x:Name="ImagePreviewSource" Stretch="Uniform"/>
-                        <TextBlock x:Name="ImagePreviewUnavailable" Text="Image unavailable"
-                                   Foreground="{StaticResource SecondaryText}" FontSize="14"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Visibility="Collapsed"/>
-                    </Grid>
-                </Grid>
-            </Border>
+                </Border>
+                <Thumb x:Name="ImagePreviewResizeGrip" Width="24" Height="24" Margin="0,0,2,2"
+                       HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                       Cursor="SizeNWSE" ToolTip="Resize preview"
+                       DragDelta="ImagePreviewResize_DragDelta"
+                       DragCompleted="ImagePreviewResize_DragCompleted">
+                    <Thumb.Template>
+                        <ControlTemplate TargetType="Thumb">
+                            <Grid Background="Transparent">
+                                <Path Data="M5,19 L19,5 M10,19 L19,10 M15,19 L19,15"
+                                      Stroke="#B0B0B0" StrokeThickness="1.5"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Thumb.Template>
+                </Thumb>
+            </Grid>
         </Popup>
     </Grid>
 </UserControl>

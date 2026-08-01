@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.Document;
@@ -98,6 +99,7 @@ public partial class MarkdownEditor : UserControl
 
     public event EventHandler? TextChanged;
     public event EventHandler? PasteImageRequested;
+    public event EventHandler? ImagePreviewSizeChanged;
 
     public string AssetRoot
     {
@@ -105,6 +107,23 @@ public partial class MarkdownEditor : UserControl
         {
             _assetRoot = value;
             _imageGenerator.AssetRoot = value;
+        }
+    }
+
+    public Size ImagePreviewSize
+    {
+        get => new(ImagePreviewCard.Width, ImagePreviewCard.Height);
+        set
+        {
+            var workArea = SystemParameters.WorkArea;
+            var maximumWidth = Math.Max(320, workArea.Width - 32);
+            var maximumHeight = Math.Max(240, workArea.Height - 32);
+            var minimumWidth = Math.Min(420, maximumWidth);
+            var minimumHeight = Math.Min(320, maximumHeight);
+            var width = double.IsFinite(value.Width) ? value.Width : 720;
+            var height = double.IsFinite(value.Height) ? value.Height : 520;
+            ImagePreviewCard.Width = Math.Clamp(width, minimumWidth, maximumWidth);
+            ImagePreviewCard.Height = Math.Clamp(height, minimumHeight, maximumHeight);
         }
     }
 
@@ -341,6 +360,14 @@ public partial class MarkdownEditor : UserControl
         _previewFullPath = preview.FullPath;
         OpenImageOriginalButton.IsEnabled = preview.FullPath is not null;
     }
+
+    private void ImagePreviewResize_DragDelta(object sender, DragDeltaEventArgs e) =>
+        ImagePreviewSize = new Size(
+            ImagePreviewCard.Width + e.HorizontalChange,
+            ImagePreviewCard.Height + e.VerticalChange);
+
+    private void ImagePreviewResize_DragCompleted(object sender, DragCompletedEventArgs e) =>
+        ImagePreviewSizeChanged?.Invoke(this, EventArgs.Empty);
 
     private void ImagePreviewScrim_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) =>
         ImagePreviewPopup.IsOpen = false;

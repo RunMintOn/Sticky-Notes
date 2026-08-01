@@ -29,6 +29,8 @@ public partial class NoteWindow : Window
         Editor.RevealMarkersOnHover = settings.RevealMarkdownOnHover;
         Editor.AutoContinueLists = settings.AutoContinueLists;
         Editor.CodeBlockAppearance = settings.CodeBlockAppearance;
+        Editor.ImagePreviewSize = new Size(settings.ImagePreviewWidth, settings.ImagePreviewHeight);
+        Editor.ImagePreviewSizeChanged += Editor_ImagePreviewSizeChanged;
         Topmost = note.IsPinned;
 
         Width = Math.Max(note.Width, MinWidth);
@@ -218,13 +220,19 @@ public partial class NoteWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        Editor.ImagePreviewSizeChanged -= Editor_ImagePreviewSizeChanged;
         _settings.PropertyChanged -= Settings_PropertyChanged;
         if (!_isLoading && !WasDeleted) SaveEditor();
         base.OnClosed(e);
     }
 
+    private void Editor_ImagePreviewSizeChanged(object? sender, EventArgs e) =>
+        _settings.SetImagePreviewSize(Editor.ImagePreviewSize.Width, Editor.ImagePreviewSize.Height);
+
     private void Settings_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(UserSettings.ImagePreviewWidth) or nameof(UserSettings.ImagePreviewHeight))
+            Editor.ImagePreviewSize = new Size(_settings.ImagePreviewWidth, _settings.ImagePreviewHeight);
         if (e.PropertyName == nameof(UserSettings.RevealMarkdownOnHover))
             Editor.RevealMarkersOnHover = _settings.RevealMarkdownOnHover;
         if (e.PropertyName == nameof(UserSettings.AutoContinueLists))

@@ -19,10 +19,17 @@ public sealed class MarkdownEditorIntegrationTests
             application.InitializeComponent();
 
             var editor = new MarkdownEditor();
+            Assert.Equal(new Size(720, 520), editor.ImagePreviewSize);
+            editor.ImagePreviewSize = new Size(800, 600);
+            Assert.Equal(new Size(800, 600), editor.ImagePreviewSize);
             const string path = "attachments/note/image.png";
             editor.InsertMarkdownImage(path);
             Assert.Equal($"![image]({path})", editor.Text);
             editor.ApplyTemplate();
+            var previewCard = Assert.IsType<System.Windows.Controls.Grid>(editor.FindName("ImagePreviewCard"));
+            var resizeGrip = Assert.IsType<System.Windows.Controls.Primitives.Thumb>(editor.FindName("ImagePreviewResizeGrip"));
+            Assert.Equal(new Size(800, 600), new Size(previewCard.Width, previewCard.Height));
+            Assert.Equal(System.Windows.Input.Cursors.SizeNWSE, resizeGrip.Cursor);
             editor.Measure(new Size(500, 500));
             editor.Arrange(new Rect(0, 0, 500, 500));
             var textEditor = FindDescendant<TextEditor>(editor);
@@ -64,6 +71,15 @@ public sealed class MarkdownEditorIntegrationTests
             try
             {
                 var settings = new UserSettings();
+                Assert.Equal(720, settings.ImagePreviewWidth);
+                Assert.Equal(520, settings.ImagePreviewHeight);
+                settings.SetImagePreviewSize(900, 650);
+                Assert.Equal(900, settings.ImagePreviewWidth);
+                Assert.Equal(650, settings.ImagePreviewHeight);
+                settings.SaveNow();
+                var restoredSettings = new UserSettings();
+                Assert.Equal(900, restoredSettings.ImagePreviewWidth);
+                Assert.Equal(650, restoredSettings.ImagePreviewHeight);
                 settings.ValuesChanged += (_, _) => ApplicationResourceUpdater.Apply(settings);
                 ApplicationResourceUpdater.Apply(settings);
                 Assert.Equal("Settings", Application.Current.FindResource("SettingsText"));

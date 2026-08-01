@@ -192,8 +192,8 @@ internal sealed class MarkdownImageGenerator : VisualLineElementGenerator, IBack
         var image = new Image
         {
             Source = preview.Source,
-            Width = size.Width - 2,
-            Height = size.Height - 2,
+            Width = size.Width,
+            Height = size.Height,
             Stretch = Stretch.Uniform,
             IsHitTestVisible = false
         };
@@ -202,11 +202,7 @@ internal sealed class MarkdownImageGenerator : VisualLineElementGenerator, IBack
             Child = image,
             Width = size.Width,
             Height = size.Height,
-            Background = _cardBackground,
-            BorderBrush = _cardBorder,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
-            ClipToBounds = true,
+            Background = Brushes.Transparent,
             Cursor = Cursors.Hand,
             Focusable = false,
             Tag = span,
@@ -247,13 +243,13 @@ internal sealed class MarkdownImageGenerator : VisualLineElementGenerator, IBack
     private static Size GetCardSize(MarkdownImagePreview preview, double availableWidth)
     {
         if (preview.Source is null) return new Size(availableWidth, UnavailableHeight);
-        var contentWidth = Math.Max(1, availableWidth - 2);
+        var contentWidth = Math.Max(1, availableWidth);
         var sourceWidth = Math.Max(1, preview.Source.Width);
         var sourceHeight = Math.Max(1, preview.Source.Height);
         var scale = Math.Min(contentWidth / sourceWidth, MaximumImageHeight / sourceHeight);
         return new Size(
-            Math.Max(3, sourceWidth * scale + 2),
-            Math.Max(3, sourceHeight * scale + 2));
+            Math.Max(1, sourceWidth * scale),
+            Math.Max(1, sourceHeight * scale));
     }
 
     private void Image_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)

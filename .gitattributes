@@ -1,0 +1,2 @@
+# Keep repository text files consistent across Windows and Unix tooling.
+* text=auto eol=lf

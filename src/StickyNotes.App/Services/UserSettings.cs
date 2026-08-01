@@ -27,6 +27,8 @@ public sealed class UserSettings : INotifyPropertyChanged
     private double _codeBlockCopyButtonSize = 24;
     private double _codeBlockCopyButtonTopOffset = 5;
     private double _codeBlockCopyButtonRightOffset = 7;
+    private double _imagePreviewWidth = 720;
+    private double _imagePreviewHeight = 520;
 
     public static IReadOnlyList<string> RenderingProfiles { get; } =
     [
@@ -69,6 +71,8 @@ public sealed class UserSettings : INotifyPropertyChanged
                     _codeBlockCopyButtonSize = Clamp(saved.CodeBlockCopyButtonSize, 18, 36);
                     _codeBlockCopyButtonTopOffset = Clamp(saved.CodeBlockCopyButtonTopOffset, 0, 20);
                     _codeBlockCopyButtonRightOffset = Clamp(saved.CodeBlockCopyButtonRightOffset, 0, 24);
+                    _imagePreviewWidth = Clamp(saved.ImagePreviewWidth ?? 720, 420, 3840);
+                    _imagePreviewHeight = Clamp(saved.ImagePreviewHeight ?? 520, 320, 2160);
                 }
             }
             catch (JsonException) { }
@@ -158,6 +162,22 @@ public sealed class UserSettings : INotifyPropertyChanged
     public double CodeBlockCopyButtonTopOffset { get => _codeBlockCopyButtonTopOffset; set => SetCodeBlock(ref _codeBlockCopyButtonTopOffset, Clamp(value, 0, 20)); }
     public double CodeBlockCopyButtonRightOffset { get => _codeBlockCopyButtonRightOffset; set => SetCodeBlock(ref _codeBlockCopyButtonRightOffset, Clamp(value, 0, 24)); }
 
+    public double ImagePreviewWidth => _imagePreviewWidth;
+    public double ImagePreviewHeight => _imagePreviewHeight;
+
+    public void SetImagePreviewSize(double width, double height)
+    {
+        width = Clamp(width, 420, 3840);
+        height = Clamp(height, 320, 2160);
+        if (Math.Abs(_imagePreviewWidth - width) < 0.5 &&
+            Math.Abs(_imagePreviewHeight - height) < 0.5) return;
+        _imagePreviewWidth = width;
+        _imagePreviewHeight = height;
+        Changed();
+        OnPropertyChanged(nameof(ImagePreviewWidth));
+        OnPropertyChanged(nameof(ImagePreviewHeight));
+    }
+
     public CodeBlockAppearance CodeBlockAppearance => new(
         CodeBlockLeftOffset,
         CodeBlockRightOffset,
@@ -185,6 +205,8 @@ public sealed class UserSettings : INotifyPropertyChanged
         _codeBlockCopyButtonSize = 24;
         _codeBlockCopyButtonTopOffset = 5;
         _codeBlockCopyButtonRightOffset = 7;
+        _imagePreviewWidth = 720;
+        _imagePreviewHeight = 520;
         Changed();
         OnPropertyChanged(nameof(OverallScale));
         OnPropertyChanged(nameof(TextScale));
@@ -201,6 +223,8 @@ public sealed class UserSettings : INotifyPropertyChanged
         OnPropertyChanged(nameof(CodeBlockCopyButtonSize));
         OnPropertyChanged(nameof(CodeBlockCopyButtonTopOffset));
         OnPropertyChanged(nameof(CodeBlockCopyButtonRightOffset));
+        OnPropertyChanged(nameof(ImagePreviewWidth));
+        OnPropertyChanged(nameof(ImagePreviewHeight));
         OnPropertyChanged(nameof(CodeBlockAppearance));
     }
 
@@ -228,6 +252,8 @@ public sealed class UserSettings : INotifyPropertyChanged
         _saveTimer.Start();
     }
 
+    internal void SaveNow() => Save();
+
     private void Save()
     {
         _saveTimer.Stop();
@@ -236,7 +262,8 @@ public sealed class UserSettings : INotifyPropertyChanged
                 OverallScale, TextScale, IconScale, RenderingProfile, RevealMarkdownOnHover, AutoContinueLists, Language,
                 CodeBlockLeftOffset, CodeBlockRightOffset, CodeBlockTopExtent, CodeBlockBottomExtent,
                 CodeBlockCornerRadius, CodeBlockBackgroundShade, CodeBlockCopyButtonSize,
-                CodeBlockCopyButtonTopOffset, CodeBlockCopyButtonRightOffset),
+                CodeBlockCopyButtonTopOffset, CodeBlockCopyButtonRightOffset,
+                ImagePreviewWidth, ImagePreviewHeight),
             new JsonSerializerOptions { WriteIndented = true }));
     }
 
@@ -260,5 +287,7 @@ public sealed class UserSettings : INotifyPropertyChanged
         double CodeBlockBackgroundShade = 39,
         double CodeBlockCopyButtonSize = 24,
         double CodeBlockCopyButtonTopOffset = 5,
-        double CodeBlockCopyButtonRightOffset = 7);
+        double CodeBlockCopyButtonRightOffset = 7,
+        double? ImagePreviewWidth = null,
+        double? ImagePreviewHeight = null);
 }
